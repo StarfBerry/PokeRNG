@@ -31,9 +31,9 @@ class SFMT:
         self.twist()
         self.index = 0
     
-    def restate(self, state: Sequence[int]):        
+    def restate(self, seq: Sequence[int]):        
         for i in range(624): 
-            self.state[i] = state[i] & 0xffffffff
+            self.state[i] = seq[i] & 0xffffffff
         
         #self.period_certification()
         self.index = 0

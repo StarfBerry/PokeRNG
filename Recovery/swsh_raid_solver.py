@@ -36,7 +36,7 @@ def swsh_recover_raid_seeds(ec: int, pid: int, ivs: list[int]) -> Iterator[tuple
     rng = Xoroshiro128Plus(0)
 
     for seed in xoroshiro_recover_seeds_with_skip(ec, pid):
-        rng.restate(seed)
+        rng.reseed(seed)
         rng.advance(3) # ec, fake ids, pid
         s0, s1 = rng.state
 
@@ -61,7 +61,7 @@ def swsh_recover_random_shiny_raid_seeds(ec: int, pidl: int, ivs: list[int], shi
     for pidh in range(1 << 16):
         px = pidh ^ pidl
         for seed in xoroshiro_recover_seeds_with_skip(ec, (pidh << 16) | pidl):
-            rng.restate(seed)
+            rng.reseed(seed)
             rng.advance(1) # ec
             sidtid = rng.next_u32()
             x = (sidtid >> 16) ^ (sidtid & 0xffff) ^ px

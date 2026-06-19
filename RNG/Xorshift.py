@@ -7,11 +7,15 @@ class Xorshift128:
         if isinstance(init, int):
             self.reseed(init)
         else:
-            self.restate(init)
+            self.state = init
                                            
     @property
     def state(self) -> tuple[int, int, int, int]:
         return (self.s0, self.s1, self.s2, self.s3)
+
+    @state.setter
+    def state(self, seq: Sequence[int]):
+        self.restate(seq[0], seq[1], seq[2], seq[3])
     
     def reseed(self, seed: int):
         self.s0 = seed & 0xffffffff
@@ -19,11 +23,11 @@ class Xorshift128:
         self.s2 = (self.s1 * 0x6C078965 + 1) & 0xffffffff
         self.s3 = (self.s2 * 0x6C078965 + 1) & 0xffffffff
     
-    def restate(self, state: Sequence[int]):        
-        self.s0 = state[0] & 0xffffffff
-        self.s1 = state[1] & 0xffffffff
-        self.s2 = state[2] & 0xffffffff
-        self.s3 = state[3] & 0xffffffff
+    def restate(self, s0: int, s1: int, s2: int, s3: int):        
+        self.s0 = s0 & 0xffffffff
+        self.s1 = s1 & 0xffffffff
+        self.s2 = s2 & 0xffffffff
+        self.s3 = s3 & 0xffffffff
         
         assert self.s0 | self.s1 | self.s2 | self.s3
 

@@ -7,11 +7,15 @@ class TinyMT:
         if isinstance(init, int):
             self.reseed(init)
         else:
-            self.restate(init)
+            self.state = init
 
     @property
     def state(self) -> tuple[int, int, int, int]:
         return (self.s0, self.s1, self.s2, self.s3)
+
+    @state.setter
+    def state(self, seq: Sequence[int]):
+        self.restate(seq[0], seq[1], seq[2], seq[3])
 
     def period_certification(self):
         if self.s1 == 0 and self.s2 == 0 and self.s3 == 0 and (self.s0 & 0x7fffffff) == 0:
@@ -41,11 +45,11 @@ class TinyMT:
 
         self.advance(8)
 
-    def restate(self, state: Sequence[int]):        
-        self.s0 = state[0] & 0xffffffff
-        self.s1 = state[1] & 0xffffffff
-        self.s2 = state[2] & 0xffffffff
-        self.s3 = state[3] & 0xffffffff
+    def restate(self, s0: int, s1: int, s2: int, s3: int):        
+        self.s0 = s0 & 0xffffffff
+        self.s1 = s1 & 0xffffffff
+        self.s2 = s2 & 0xffffffff
+        self.s3 = s3 & 0xffffffff
         
         self.period_certification()
 
@@ -69,7 +73,7 @@ class TinyMT:
         """
         Technically the TinyMT next state function is not bijective so it doesn't have an inverse.
         
-        However the current state reveals 127 bits of the previous state.
+        However, the current state reveals 127 bits of the previous state.
         
         Then, we can recover the last bit by checking if the obtained state/vector lives in the TinyMT's vector space thanks to it's equation.
         """

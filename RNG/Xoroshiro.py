@@ -1,5 +1,7 @@
 # Xoroshiro128+ (+ splitmix seeding variant)
 
+from typing import Sequence
+
 def rotl(n: int, k: int) -> int:
     return ((n << k) | (n >> (64 - k))) & 0xffffffffffffffff
 
@@ -18,8 +20,16 @@ class Xoroshiro128Plus:
     @property
     def state(self) -> tuple[int, int]:
         return (self.s0, self.s1)
+    
+    @state.setter
+    def state(self, seq: Sequence[int]):
+        self.restate(seq[0], seq[1])
 
-    def restate(self, s0: int, s1: int = XOROSHIRO_S1_CONST):
+    def reseed(self, seed: int):
+        self.s0 = seed & 0xffffffffffffffff
+        self.s1 = XOROSHIRO_S1_CONST
+    
+    def restate(self, s0: int, s1: int):
         self.s0 = s0 & 0xffffffffffffffff
         self.s1 = s1 & 0xffffffffffffffff
 
@@ -92,10 +102,6 @@ class XoroshiroBDSP(Xoroshiro128Plus):
     def reseed(self, seed: int):
         self.s0 = splitmix(seed + 0x9E3779B97F4A7C15)
         self.s1 = splitmix(seed + 0x3C6EF372FE94F82A)
-
-    def restate(self, s0: int, s1: int):
-        self.s0 = s0 & 0xffffffffffffffff
-        self.s1 = s1 & 0xffffffffffffffff
 
     def next_u32(self) -> int:
         return self.next_u64() >> 32
