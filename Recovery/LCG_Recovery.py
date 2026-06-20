@@ -45,7 +45,7 @@ from typing import Iterator
 #################################################################################################################################################################
 
 '''
-|          1     0 |   Lagrange   |  32471  -68321 |     Det  
+|          1     0 |   Lagrange   |  32471  -68321 |     Det
 |                  | ===========> |                | ===========> 2^32
 | 0xEEB9EB65  2^32 |              |  26579   76347 |
 '''
@@ -55,11 +55,11 @@ R_MULT  = 0xEEB9EB65 # reverse multiplier constant
 R_INC   = 0xA3561A1  # reverse increment constant
 R_LAG0  = 0x7ED7     # 32471
 R_LAG1  = 0x71A4     # -68321 mod 32471
-R_LOWER = 0x79C8BF49 # (-0x50F40B53C37 >> 16) + (32471 << 16) + 0xffff
+R_LOWER = 0x79C8BF4A # ((-0x50F40B53C37 + 0xffff_ffff) >> 16) + (32471 << 16)
 R_UPPER = 0x79C8A5F4 # (-0x50E5A0B3C37 >> 16) + (32471 << 16)
 
 '''
-|          1     0 |   Lagrange   |  26579  -51463 |    *(-1)     | -26579   51463 |     Det    
+|          1     0 |   Lagrange   |  26579  -51463 |    *(-1)     | -26579   51463 |     Det
 |                  | ===========> |                | ===========> |                | ===========> 2^31
 | 0x41C64E6D  2^31 |              |  32471   17925 |              | -32471  -17925 |
 '''
@@ -70,7 +70,7 @@ INC   = 0x6073     # increment constant
 LAG0  = 0x6134     # -26579 mod 51463
 LAG1  = 0xC907     # 51463
 # The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
-LOWER = 0x64833CAF # (-0xC34F11DB >> 16) + (51463 << 15) + 0x7fff
+LOWER = 0x64833CB0 # ((-0xC34F11DB + 0x7fff_ffff) >> 16) + (51463 << 15)
 UPPER = 0x6483CBBC # ( 0x4BBCEE25 >> 16) + (51463 << 15)
 
 # around 2.02 iterations in average
@@ -177,8 +177,8 @@ R_INC_2   = 0x4D3CB126 # reverse increment constant
 R_LAG0_2  = 0x6C31     # 27697
 R_LAG1_PID_2 = 0x5D20  # -59251 mod 27697
 R_LAG1_IVS_2 = 0x2E90  # -43474 mod 27697
-R_LOWER_PID_2 = 0x4B8D621C # (-0x20A49DE2F046 >> 16) + (27697 << 16) + 0xffff
-R_LOWER_IVS_2 = 0x4B8CE21C # (-0x20A49DE2F046 >> 16) + (27697 << 16) + 0x7fff
+R_LOWER_PID_2 = 0x4B8D621D # (-0x20A49DE2F046 + 0xffff_ffff) >> 16) + (27697 << 16)
+R_LOWER_IVS_2 = 0x4B8CE21D # (-0x20A49DE2F046 + 0x7fff_ffff) >> 16) + (27697 << 16)
 R_UPPER_2     = 0x4B8D08D7 # (-0x20A3F728F046 >> 16) + (27697 << 16)
 
 # The range of the second variable is smaller than one.
@@ -228,7 +228,7 @@ def LCRNG_recover_ivs_seeds_with_blank(hp: int, atk: int, dfs: int, spa: int, sp
 #################################################################################################################################################################
 
 '''
-|          1     0 |   Lagrange   | -59601 -35210 |    *(-1)     | 59601   35210 |     Det  
+|          1     0 |   Lagrange   | -59601 -35210 |    *(-1)     | 59601   35210 |     Det
 |                  | ===========> |               | ===========> |               | ===========> -2^32
 | 0xB9B33155  2^32 |              | -20069  60206 |              | 20069  -60206 |
 '''
@@ -239,11 +239,11 @@ GC_R_INC   = 0xA170F641 # reverse increment constant
 GC_R_LAG0  = 0xE8D1     # 59601
 GC_R_LAG1  = 0x5F47     # -35210 mod 59601
 # The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
-GC_R_LOWER = 0x55FF8536 # (-0x92D27AC8F311 >> 16) + (59601 << 16) + 0xffff
+GC_R_LOWER = 0x55FF8537 # ((-0x92D27AC8F311 + 0xffff_ffff) >> 16) + (59601 << 16)
 GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 
 '''
-|          1     0 |   Lagrange   | -17605  59601 |     Det  
+|          1     0 |   Lagrange   | -17605  59601 |     Det
 |                  | ===========> |               | ===========> -2^31
 | 0x39B33155  2^31 |              |  30103  20069 | 
 
@@ -257,7 +257,7 @@ GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 GC_R_LAG0_IVS  = 0x44C5     # 17605
 GC_R_LAG1_IVS  = 0xE8D1     # 59601
 # The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
-GC_R_LOWER_IVS = 0x1E694391 # (0x1E68C392F311 >> 16) + 0x7fff
+GC_R_LOWER_IVS = 0x1E694392 # (0x1E68C392F311 + 0xffff_ffff) >> 16
 GC_R_UPPER_IVS = 0x1E69FAC8 # (0x1E69FAC8F311 >> 16)
 
 # GCRNG IVs Constants (bounding the second variable)
@@ -265,7 +265,7 @@ GC_MULT  = 0x343FD    # multiplier constant
 GC_INC   = 0x269EC3   # increment constant
 GC_LAG0  = 0x7597     # 30103
 GC_LAG1  = 0x4E65     # 20069
-GC_LOWER = 0x3ABA42A8 # (-0x11BD56C405 >> 16) + (30103 << 15) + 0x7fff
+GC_LOWER = 0x3ABA42A9 # ((-0x11BD56C405 + 0x7fff_ffff) >> 16) + (30103 << 15)
 GC_UPPER = 0x3ABA7D05 # (-0x1102FAC405 >> 16) + (30103 << 15)
 
 # around 1.34 iterations in average
@@ -380,12 +380,12 @@ def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int,
 #################################################################################################################################################################
 
 '''
-|         1    0    0    0    0    0|           | -2528644 -24142902  52961366   7565619  24945956 -99942057|            |-10  23  -1 -15  52 -53|
-|   0x343FD 2^32    0    0    0    0|           |  3190924 -49228638   2127614 -61851545 114532500  37689339|            |-14   7 -18 -21 -26 -24|
-|0xA9FC6809    0 2^32    0    0    0|    BKZ    |  -582052 -13727206  70521606  54506187  65564228  59925519|  Inverse   | 24  -5  22  15  -5 -15|
-|0x45C82BE5    0    0 2^32    0    0| ========> |-12643092 -42907214  25386734 -98577505 -61029068  67751891| =========> | -5 -24  26 -12   9  14| * 1/2^32
-|0xDDFF5051    0    0    0 2^32    0|           | 43348284 -61510934 -42525898  11780387 -18382748 -24142713|            |  0  27   0 -18  -8  -1|
-|0x284A930D    0    0    0    0 2^32|           |-33055668 -64755902 -59308450  10160279  42995412  -8780181|            |-27   0  18   8   1   0|      
+|          1    0    0    0    0    0 |           |  -2528644 -24142902  52961366   7565619  24945956 -99942057 |            | -10  23  -1 -15  52 -53 |
+|    0x343FD 2^32    0    0    0    0 |           |   3190924 -49228638   2127614 -61851545 114532500  37689339 |            | -14   7 -18 -21 -26 -24 |
+| 0xA9FC6809    0 2^32    0    0    0 |    BKZ    |   -582052 -13727206  70521606  54506187  65564228  59925519 |  Inverse   |  24  -5  22  15  -5 -15 |
+| 0x45C82BE5    0    0 2^32    0    0 | ========> | -12643092 -42907214  25386734 -98577505 -61029068  67751891 | =========> |  -5 -24  26 -12   9  14 | * 1/2^32
+| 0xDDFF5051    0    0    0 2^32    0 |           |  43348284 -61510934 -42525898  11780387 -18382748 -24142713 |            |   0  27   0 -18  -8  -1 |
+| 0x284A930D    0    0    0    0 2^32 |           | -33055668 -64755902 -59308450  10160279  42995412  -8780181 |            | -27   0  18   8   1   0 |
 '''
 
 # First row of the BKZ-reduced matrix
