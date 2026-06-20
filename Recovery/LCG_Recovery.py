@@ -250,7 +250,7 @@ GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 
 |          1     0 |   Lagrange   |  30103  20069 |     Det
 |                  | ===========> |               | ===========> 2^31
-|    0x343FD  2^31 |              | -17605  59601 |             
+|    0x343FD  2^31 |              | -17605  59601 |
 '''
 
 # GCRNG IVs Constants (bounding the first variable)
