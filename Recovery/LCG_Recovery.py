@@ -257,7 +257,7 @@ GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 GC_R_LAG0_IVS  = 0x44C5     # 17605
 GC_R_LAG1_IVS  = 0xE8D1     # 59601
 # The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
-GC_R_LOWER_IVS = 0x1E694392 # (0x1E68C392F311 + 0xffff_ffff) >> 16
+GC_R_LOWER_IVS = 0x1E694392 # (0x1E68C392F311 + 0x7fff_ffff) >> 16
 GC_R_UPPER_IVS = 0x1E69FAC8 # (0x1E69FAC8F311 >> 16)
 
 # GCRNG IVs Constants (bounding the second variable)
