@@ -177,8 +177,8 @@ R_INC_2   = 0x4D3CB126 # reverse increment constant
 R_LAG0_2  = 0x6C31     # 27697
 R_LAG1_PID_2 = 0x5D20  # -59251 mod 27697
 R_LAG1_IVS_2 = 0x2E90  # -43474 mod 27697
-R_LOWER_PID_2 = 0x4B8D621D # (-0x20A49DE2F046 + 0xffff_ffff) >> 16) + (27697 << 16)
-R_LOWER_IVS_2 = 0x4B8CE21D # (-0x20A49DE2F046 + 0x7fff_ffff) >> 16) + (27697 << 16)
+R_LOWER_PID_2 = 0x4B8D621D # ((-0x20A49DE2F046 + 0xffff_ffff) >> 16) + (27697 << 16)
+R_LOWER_IVS_2 = 0x4B8CE21D # ((-0x20A49DE2F046 + 0x7fff_ffff) >> 16) + (27697 << 16)
 R_UPPER_2     = 0x4B8D08D7 # (-0x20A3F728F046 >> 16) + (27697 << 16)
 
 # The range of the second variable is smaller than one.
