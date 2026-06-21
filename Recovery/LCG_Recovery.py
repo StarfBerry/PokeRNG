@@ -140,7 +140,7 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
                 yield seed
                 yield seed ^ 0x80000000
 
-# With ternary assignments, it's possible to reduce the number of modulo operations, the most computationally expensive operation in the code, to a single one.
+# By using ternary assignments, it's possible to reduce the number of modulo operations, the most computationally expensive operation in the code, to a single one.
 def LCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
@@ -157,7 +157,7 @@ def LCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: 
             yield seed
             yield seed ^ 0x80000000
     
-    r = r + LAG0 if r < DIFF else r - DIFF # <==> r = (r + LAG0) % LAG1
+    r += LAG0 if r < DIFF else -DIFF # <==> r = (r + LAG0) % LAG1
 
     for lbits in range(r, 0x10000, LAG1):
         seed = first | lbits
@@ -167,7 +167,7 @@ def LCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: 
     
     # true in around 12% of cases
     if (lo + 1) != up:
-        r = r + LAG0 if r < DIFF else r - DIFF # <==> r = (r + LAG0) % LAG1
+        r += LAG0 if r < DIFF else -DIFF # <==> r = (r + LAG0) % LAG1
         
         for lbits in range(r, 0x10000, LAG1):
             seed = first | lbits
@@ -352,7 +352,7 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
                 yield seed
                 yield seed ^ 0x80000000
 
-# With ternary assignments, it's possible to reduce the number of modulo operations, the most computationally expensive operation in the code, to a single one.
+# By using ternary assignments, it's possible to reduce the number of modulo operations, the most computationally expensive operation in the code, to a single one.
 def GCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
@@ -369,7 +369,7 @@ def GCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: 
             yield seed
             yield seed ^ 0x80000000
     
-    r = r + GC_R_LAG0_IVS if r < GC_R_DIFF_IVS else r - GC_R_DIFF_IVS # <==> r = (r + GC_R_LAG0_IVS) % GC_R_LAG1_IVS
+    r += GC_R_LAG0_IVS if r < GC_R_DIFF_IVS else -GC_R_DIFF_IVS # <==> r = (r + GC_R_LAG0_IVS) % GC_R_LAG1_IVS
 
     for lbits in range(r, 0x10000, GC_R_LAG1_IVS):
         seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
@@ -379,7 +379,7 @@ def GCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: 
     
     # true in around 43% of cases
     if (lo + 1) != up:
-        r = r + GC_R_LAG0_IVS if r < GC_R_DIFF_IVS else r - GC_R_DIFF_IVS # <==> r = (r + GC_R_LAG0_IVS) % GC_R_LAG1_IVS
+        r += GC_R_LAG0_IVS if r < GC_R_DIFF_IVS else -GC_R_DIFF_IVS # <==> r = (r + GC_R_LAG0_IVS) % GC_R_LAG1_IVS
         
         for lbits in range(r, 0x10000, GC_R_LAG1_IVS):
             seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
