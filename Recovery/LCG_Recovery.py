@@ -69,7 +69,9 @@ MULT  = 0x41C64E6D # multiplier constant
 INC   = 0x6073     # increment constant
 LAG0  = 0x6134     # -26579 mod 51463
 LAG1  = 0xC907     # 51463
+DLAG0 = 0xC268     # 2 * LAG0
 DIFF  = 0x67D3     # LAG1 - LAG0
+DIFF2 = 0x69F      # LAG1 - DLAG0
 # The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
 LOWER = 0x64833CB0 # ((-0xC34F11DB + 0x7fff_ffff) >> 16) + (51463 << 15)
 UPPER = 0x6483CBBC # (0x4BBCEE25 >> 16) + (51463 << 15)
@@ -115,32 +117,32 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
     tmp = (((MULT * first - second) >> 16) & 0xffff) * LAG1
-    lo = ((tmp + LOWER) >> 15) * LAG0
-    mi = lo + LAG0
-    up = ((tmp + UPPER) >> 15) * LAG0
+    lo = (tmp + LOWER) >> 15
+    up = (tmp + UPPER) >> 15
+    r = (lo * LAG0) % LAG1
 
     # each loop performs at most 2 iterations
-    for lbits in range(lo % LAG1, 0x10000, LAG1):
+    for lbits in range(r, 0x10000, LAG1):
         seed = first | lbits
         if ((seed * MULT + INC) & 0x7fff0000) == second:
             yield seed
             yield seed ^ 0x80000000
     
-    for lbits in range(mi % LAG1, 0x10000, LAG1):
+    for lbits in range((r + LAG0) % LAG1, 0x10000, LAG1):
         seed = first | lbits
         if ((seed * MULT + INC) & 0x7fff0000) == second:
             yield seed
             yield seed ^ 0x80000000
     
     # true in around 12% of cases
-    if mi != up:
-        for lbits in range(up % LAG1, 0x10000, LAG1):
+    if (lo + 1) != up:
+        for lbits in range((r + DLAG0) % LAG1, 0x10000, LAG1):
             seed = first | lbits
             if ((seed * MULT + INC) & 0x7fff0000) == second:
                 yield seed
                 yield seed ^ 0x80000000
 
-# By using ternary assignments, it's possible to reduce the number of modulo operations, the most computationally expensive operation in the code, to a single one.
+# By using ternary operator, it's possible to reduce the number of modulo operations, the most computationally expensive operation in the code, to a single one.
 def LCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
@@ -157,19 +159,15 @@ def LCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: 
             yield seed
             yield seed ^ 0x80000000
     
-    r += LAG0 if r < DIFF else -DIFF # <==> r = (r + LAG0) % LAG1
-
-    for lbits in range(r, 0x10000, LAG1):
+    for lbits in range(r + (LAG0 if r < DIFF else -DIFF), 0x10000, LAG1):
         seed = first | lbits
         if ((seed * MULT + INC) & 0x7fff0000) == second:
             yield seed
             yield seed ^ 0x80000000
     
     # true in around 12% of cases
-    if (lo + 1) != up:
-        r += LAG0 if r < DIFF else -DIFF # <==> r = (r + LAG0) % LAG1
-        
-        for lbits in range(r, 0x10000, LAG1):
+    if (lo + 1) != up:       
+        for lbits in range(r + (-DIFF2 if r >= DIFF2 else DLAG0), 0x10000, LAG1):
             seed = first | lbits
             if ((seed * MULT + INC) & 0x7fff0000) == second:
                 yield seed
@@ -273,7 +271,7 @@ GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 # GCRNG IVs Constants (bounding the first variable)
 GC_R_LAG0_IVS  = 0x44C5     # 17605
 GC_R_LAG1_IVS  = 0xE8D1     # 59601
-GC_R_DIFF_IVS  = 0xA40C     # 59601 - 17605
+GC_R_DLAG0_IVS = 0x898A     # 2 * 17605
 # The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
 GC_R_LOWER_IVS = 0x1E694392 # (0x1E68C392F311 + 0x7fff_ffff) >> 16
 GC_R_UPPER_IVS = 0x1E69FAC8 # (0x1E69FAC8F311 >> 16)
@@ -327,41 +325,10 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
     tmp = (((GC_R_MULT * second - first) >> 16) & 0xffff) * GC_R_LAG1_IVS
-    lo = ((tmp + GC_R_LOWER_IVS) >> 15) * GC_R_LAG0_IVS
-    mi = lo + GC_R_LAG0_IVS
-    up = ((tmp + GC_R_UPPER_IVS) >> 15) * GC_R_LAG0_IVS
-
-    # each loop performs at most 2 iterations
-    for lbits in range(lo % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
-        seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
-        if (seed & 0x7fff0000) == first:
-            yield seed
-            yield seed ^ 0x80000000
-    
-    for lbits in range(mi % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
-        seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
-        if (seed & 0x7fff0000) == first:
-            yield seed
-            yield seed ^ 0x80000000
-    
-    # true in around 43% of cases
-    if mi != up:
-        for lbits in range(up % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
-            seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
-            if (seed & 0x7fff0000) == first:
-                yield seed
-                yield seed ^ 0x80000000
-
-# By using ternary assignments, it's possible to reduce the number of modulo operations, the most computationally expensive operation in the code, to a single one.
-def GCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
-    first  = ((dfs << 10) | (atk << 5) | hp ) << 16
-    second = ((spd << 10) | (spa << 5) | spe) << 16
-
-    tmp = (((GC_R_MULT * second - first) >> 16) & 0xffff) * GC_R_LAG1_IVS
     lo = (tmp + GC_R_LOWER_IVS) >> 15
     up = (tmp + GC_R_UPPER_IVS) >> 15
     r = (lo * GC_R_LAG0_IVS) % GC_R_LAG1_IVS
-    
+
     # each loop performs at most 2 iterations
     for lbits in range(r, 0x10000, GC_R_LAG1_IVS):
         seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
@@ -369,9 +336,7 @@ def GCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: 
             yield seed
             yield seed ^ 0x80000000
     
-    r += GC_R_LAG0_IVS if r < GC_R_DIFF_IVS else -GC_R_DIFF_IVS # <==> r = (r + GC_R_LAG0_IVS) % GC_R_LAG1_IVS
-
-    for lbits in range(r, 0x10000, GC_R_LAG1_IVS):
+    for lbits in range((r + GC_R_LAG0_IVS) % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
         seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
         if (seed & 0x7fff0000) == first:
             yield seed
@@ -379,9 +344,7 @@ def GCRNG_recover_ivs_seeds_ternary(hp: int, atk: int, dfs: int, spa: int, spd: 
     
     # true in around 43% of cases
     if (lo + 1) != up:
-        r += GC_R_LAG0_IVS if r < GC_R_DIFF_IVS else -GC_R_DIFF_IVS # <==> r = (r + GC_R_LAG0_IVS) % GC_R_LAG1_IVS
-        
-        for lbits in range(r, 0x10000, GC_R_LAG1_IVS):
+        for lbits in range((r + GC_R_DLAG0_IVS) % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
             seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
             if (seed & 0x7fff0000) == first:
                 yield seed
