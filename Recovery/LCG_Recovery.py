@@ -20,13 +20,14 @@ from typing import Iterator
 # In the Sage script, a different lattice reduction algorithm is used, the BKZ algorithm, which can be applied to any dimension and will produce the same results in 2D. 
 # Lagrange's algorithm was the first to be used during the implementation of the code, and it's also the oldest lattice reduction algorithm ever documented.
 # This is why Lagrange's name has been retained in the name of certain constants, as well as to name and illustrate the reduced matrices in the comments.
-# To choose which variable to bound, we look for the one that minimizes the average number of iterations, based on its range (which can be determined using the Sage script) and 
-# the coefficient with the highest absolute value in the adjacent column, which will serve as the modulus.
+# To begin calculating the constants, we build the matrix representing the lattice on which we will work, and then we apply Lagrange's algorithm to it.
+# Next, we choose the variable to bound by looking for the one that minimizes the average number of iterations based on its range (which can be determined with the Sage script)
+# and the coefficient with the highest absolute value in the adjacent column, which will serve as the modulus.
 # The average number of iterations can be estimated with the following formula: range * 2^16 / abs(modulus).
 # To ensure that the calculations in the code are performed correctly, the modulus must be positive and located on the first row of the Lagrange-reduced matrix.
 # If the modulus is located on the second row, we can swap the rows by building the lattice matrix from the reversed version of the LCG, and then apply Lagrange's algorithm to it.
 # In the case where the modulus is negative, we multiply the Lagrange-reduced matrix by -1 to obtain a positive modulus.
-# At the end, LAG0 and LAG1 constants are respectively the top left and top right coefficients of the resulting matrix.
+# At the end, LAG0 and LAG1 are respectively the top left and top right coefficients of the resulting matrix.
 # If we bound the first variable, LAG1 is the modulus and LAG0 is reduced modulo LAG1, and vice-versa for the second variable.
 # Furthermore, our calculations involve integer divisions by the determinant of the Lagrange-reduced matrices.
 # In our case, these determinants are always powers of 2, which can be positive or negative.
@@ -338,6 +339,44 @@ def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int,
             if ((seed * GC_MULT + GC_INC) & 0x7fff0000) == second:
                 yield seed
                 yield seed ^ 0x80000000
+
+#################################################################################################################################################################
+
+'''
+|                  1     0 |   Lagrange   | -3070150413  3572620529 |    *(-1)     | 3070150413 -3572620529 |     Det
+|                          | ===========> |                         | ===========> |                        | ===========> 2^64
+| 0xDEDCEDAE9638806D  2^64 |              | -1993949321 -3688131939 |              | 1993949321  3688131939 |
+'''
+
+# Proof of concept for 64-bit LCGs
+BW_R_MULT  = 0xDEDCEDAE9638806D # reverse multiplier constant
+BW_R_INC   = 0x9B1AE6E9A384E6F9 # reverse increment constant
+BW_R_LAG0  = 0xB6FEC70D         # 3070150413
+BW_R_LAG1  = 0x990BB129         # -3572620529 mod 3070150413
+BW_R_LOWER = 0x481F49988938ADF4 # ((-0x6EDF7D7576C7520BCE5949A5 + 0xffff_ffff_ffff_ffff) >> 32) + (3070150413 << 32)
+BW_R_UPPER = 0x481F4998B710B5F4 # (-0x6EDF7D7448EF4A0BCE5949A5 >> 32) + (3070150413 << 32)
+
+# around 1.65 iterations in average
+def BWRNG_recover_state_from_2x32_bits(out0: int, out1: int) -> Iterator[int]:
+    out0 <<= 32
+    out1 <<= 32
+    
+    tmp = (((out0 - out1 * BW_R_MULT) >> 32) & 0xffff_ffff) * BW_R_LAG0
+    lo = (tmp + BW_R_LOWER) >> 32
+    up = (tmp + BW_R_UPPER) >> 32
+
+    # each loop performs at most 2 iterations
+    for lbits in range((lo * BW_R_LAG1) % BW_R_LAG0, 0x1_0000_0000, BW_R_LAG0):
+        state = ((out1 | lbits) * BW_R_MULT + BW_R_INC) & 0xffff_ffff_ffff_ffff
+        if (state & 0xffff_ffff_0000_0000) == out0:
+            yield state
+    
+    # true in around 18% of cases
+    if lo != up:
+        for lbits in range((up * BW_R_LAG1) % BW_R_LAG0, 0x1_0000_0000, BW_R_LAG0):
+            state = ((out1 | lbits) * BW_R_MULT + BW_R_INC) & 0xffff_ffff_ffff_ffff
+            if (state & 0xffff_ffff_0000_0000) == out0:
+                yield state
 
 #################################################################################################################################################################
 
