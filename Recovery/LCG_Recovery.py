@@ -165,7 +165,7 @@ R_UPPER_2     = 0x4B8D08D7 # (-0x20A3F728F046 >> 16) + (27697 << 16)
 
 # The range of the second variable is smaller than one.
 # So, in some cases, we can predict that there will be no solutions without having to enter the loop.
-def LCRNG_recover_pid_seeds_with_blank(pid: int) -> Iterator[int]:
+def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
     first = (pid & 0xffff) << 16
     third = pid & 0xffff0000
     
@@ -184,7 +184,7 @@ def LCRNG_recover_pid_seeds_with_blank(pid: int) -> Iterator[int]:
             yield seed
 
 # around 3.08 iterations in average
-def LCRNG_recover_ivs_seeds_with_blank(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
+def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first = ((dfs << 10) | (atk << 5) | hp ) << 16
     third = ((spd << 10) | (spa << 5) | spe) << 16
     
@@ -343,7 +343,24 @@ def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int,
 #################################################################################################################################################################
 
 '''
-|          1     0 |   Lagrange   | -46423 -63468 |    *(-1)     | 46423   63468 |     Det  
+In DPPt and HGSS, lottery numbers are generated using 2 different LCGs, as following:
+
+Let n0, n1 be two consecutive lottery numbers, and x the group seed we are searching for.
+
+n0 = MRNG(x) >> 16
+
+Let X = MRNG(x), and assume that all calculations are performed modulo 2^32.
+
+n1 = MRNG(ARNG(x)) >> 16 
+   = MRNG(ARNG(MRNGR(X))) >> 16
+   = (0x41C64E6D * (0x6C078965 * (0xEEB9EB65 * X + 0xFC77A683) + 0x1) + 0x3039) >> 16
+   = (0x6C078965 * X + 0xCA55F729) >> 16
+   
+In this way, the LCGs were combined into a single one, which can be used to build the lattice matrix.
+However, it's a little more advantageous to work with the reversed version of this new LCG, since it yields the smallest average number of iterations.
+
+
+|          1     0 |   Lagrange   | -46423 -63468 |    *(-1)     | 46423   63468 |     Det
 |                  | ===========> |               | ===========> |               | ===========> -2^32
 | 0x9638806D  2^32 |              | -46603  28804 |              | 46603  -28804 |
 '''
