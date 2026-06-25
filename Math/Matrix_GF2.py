@@ -94,6 +94,7 @@ def matrix_kernel_gf2(mat: Matrix) -> Matrix:
     _, operations, rank = matrix_reduced_row_echelon_form_gf2(mat.T)
 
     ker = np.zeros((col, col - rank), np.uint8)
+    
     for c, i in enumerate(range(rank, col)):
         ker[:, c] = int_to_bit_vector(operations[i], col)
 
@@ -115,7 +116,7 @@ def matrix_pow_gf2(mat: Matrix, n: int) -> Matrix:
     return res
 
 def matrix_equation_gf2(mat: Matrix) -> tuple[int, int]:   
-    """Calculates the zeros and the equation to check if a vector lives in the column space of the given matrix."""
+    """Computes the zeros and the equation to check if a vector lives in the column space of the given matrix."""
     _, terms, rank = matrix_reduced_row_echelon_form_gf2(mat)
 
     zeros = equation = 0
@@ -133,12 +134,13 @@ def matrix_equation_gf2(mat: Matrix) -> tuple[int, int]:
 # However, for 128-bit (or even 256-bit) PRNGs matrices, which are relatively small and empty, the algo is quite fast.
 def matrix_charpoly_gf2(mat: Matrix) -> int:
     """
-    Calculates the characteristic polynomial of the given matrix over GF(2).
+    Computes the characteristic polynomial of the given matrix over GF(2).
     
     The algorithm uses successive polynomial divisions and subtractions (like in the Euclid's algorithm) to nullify all coefficients above the main diagonal.
     
     At the end, the matrix is triangular and its determinant can be calculated by multiplying the coefficients on the main diagonal.
     """
+    
     n = mat.shape[0]    
     assert n == mat.shape[1], "The matrix must be square."
 

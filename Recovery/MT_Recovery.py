@@ -23,7 +23,7 @@ def mt_reverse_init_loop(s: int, p: int) -> int:
 
 # Based on: https://blog.lexfo.fr/php-mt-rand-prediction.html
 def mt_recover_seed_from_untempered_outputs(curr_s0: int, curr_s227: int, ofs: int = 0) -> int | None:
-    """Recover the MT seed with two untempered outputs separated by 226 others (from the first twisted state)."""  
+    """Recovers the MT seed with two untempered outputs separated by 226 others (from the first twisted state)."""  
     assert 0 <= ofs < 396
         
     x = curr_s0 ^ curr_s227

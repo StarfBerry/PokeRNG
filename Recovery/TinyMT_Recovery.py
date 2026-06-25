@@ -66,7 +66,7 @@ def tinymt_recover_seed_from_state(s0: int, s1: int, s2: int, s3: int, max_advc:
     return None
 
 def tinymt_recover_state_from_127_bits(bits: Sequence[int]) -> tuple[int, int, int, int]:
-    """Recover the internal state of a TinyMT instance thanks to the least significant bit of 127 consecutive outputs."""
+    """Recovers the internal state of a TinyMT instance thanks to the least significant bit of 127 consecutive outputs."""
     if len(bits) != 127:
         raise ValueError("127 bits are needed to run the algorithm.")
     

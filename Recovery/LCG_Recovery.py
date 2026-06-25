@@ -4,15 +4,16 @@ from typing import Iterator
 # Here is an example of lattice reduction applied to an LCG: https://gist.github.com/EDDxample/38a9acddcd29f15af034fd91da93b8fa
 # And a video if you'd like to learn more: https://www.youtube.com/watch?v=gsaV9gcLntM
 
-# The constants involved in the code were calculated using this Sage script: https://gist.github.com/StarfBerry/6473c4e33ae73fc5b370530f694d47ab
-# If you don't have Sage installed on your machine, you can evaluate the code online here: https://sagecell.sagemath.org/
+# The constants in the code were computed using this Sage script: https://gist.github.com/StarfBerry/6473c4e33ae73fc5b370530f694d47ab
 # Basically, the idea behind the script is to track where the vertices of a hypercube (representing the ranges of desired outputs) are sent into a reduced space.
-# Next, we look at the minimum and maximum coordinates in all dimensions to find the extreme vertices of the resulting parallelepiped.
-# Moreover, the desired outputs provided by the user can be interpreted as a vertix of the hypercube, and we calculate the differences between the vector coordinates of 
-# the extreme vertices of the parallelepiped and those of the user's vertix that was sent into the reduced space.
-# The differences obtained will always be the same, regardless of the user's desired outputs, and can be derivate into integer constants.
-# These integer constants can be used to bound the variables in the linear combinations of the candidate solutions.
-# In this way, we don't have to deal with matrix calculations and floating numbers at the runtime, we only need to do this once.
+# Next, we look at the minimum and maximum coordinates in all dimensions to find the endpoints of the resulting parallelepiped.
+# Moreover, the desired outputs provided by the user can be interpreted as a vertex of the hypercube, and we calculate the differences between the vector coordinates of the
+# endpoints of the parallelepiped and those of the user's vertex that was sent into the reduced space.
+# The differences will always be the same, regardless of the user's desired outputs, and can be derivate into integer constants.
+# These integer constants can be added during the calculation of the coordinates of the user's vertex in the reduced space, in order to obtain the extreme coordinates of the 
+# parallelepiped in each dimension. 
+# In other words, we can bound the variables in the integer linear combinations of the candidate solutions, without having to deal with matrix calculations and floating 
+# numbers at the runtime.
 
 # In two dimensions, we use modular arithmetic and the fact that we know the strict upper bound of the unknowns (2^16 in our case), to avoid bounding one of the two variables in 
 # the linear combinations and, on average, perform fewer iterations than if we had calculated these linear combinations.
@@ -20,7 +21,7 @@ from typing import Iterator
 # In the Sage script, a different lattice reduction algorithm is used, the BKZ algorithm, which can be applied to any dimension and will produce the same results in 2D. 
 # Lagrange's algorithm was the first to be used during the implementation of the code, and it's also the oldest lattice reduction algorithm ever documented.
 # This is why Lagrange's name has been retained in the name of certain constants, as well as to name and illustrate the reduced matrices in the comments.
-# To begin computing the constants, we build the matrix representing the lattice on which we will work, and then we apply Lagrange's algorithm to it.
+# To begin computing the constants, we build the matrix representing the lattice on which we will work, and we apply Lagrange's algorithm to it.
 # Next, we choose the variable to bound by looking for the one that minimizes the average number of iterations based on its range (which can be determined with the Sage script)
 # and the coefficient with the highest absolute value in the adjacent column, which will serve as the modulus.
 # The average number of iterations can be estimated with the following formula: range * 2^16 / abs(modulus).
@@ -32,10 +33,10 @@ from typing import Iterator
 # Furthermore, our calculations involve integer divisions by the determinant of the Lagrange-reduced matrices.
 # In our case, these determinants are always powers of 2, which can be positive or negative.
 # If the determinant is positive, the integer division can be performed using a right bit shift.
-# To take advantage of this even when the determinant is negative, we transfer the sign of the determinant to a constant that appears in a multiplication.
+# To take advantage of this even when the determinant is negative, we transfer the sign of the determinant to the constant involved in the multiplication just before the modulo.
 # Thus, if the determinant of a Lagrange-reduced matrix is negative, the opposite of LAG0 or LAG1 (not the modulus) is used to compensate.
 
-# LOWER and UPPER constants are the ones used to bound the variables in the linear combinations.
+# LOWER and UPPER constants are the ones used to bound the variables in the integer linear combinations.
 # In the 2-dimension case, the constants returned by the Sage script have been divided by 2^16, and extra values were added to most of them.
 # The division by 2^16 is due to the fact that the divisions by the determinant of the Lagrange-reduced matrices have been split into 2 subdivisions, and we assume that the 
 # constants have already been divided during the first subdivision. 

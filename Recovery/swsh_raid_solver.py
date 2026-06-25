@@ -100,9 +100,14 @@ def search_swsh_raid_seeds(ec: int, pid: int, ivs: list[int], shiny: Shiny = Shi
         print("No results.")
 
 if __name__ == "__main__":
-    ec = 0x34d1c0d3
+    '''ec = 0x34d1c0d3
     pid = 0x3ee4c7ae
     ivs = [9, 31, 23, 18, 23, 31]
+    shiny = Shiny.No'''
+
+    ec = 0xbd5a494b
+    pid = 0xd8f030c6
+    ivs = [31, 31, 31, 31, 20, 31]
     shiny = Shiny.No
     
     '''ec = 0xb93c5409
