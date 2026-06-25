@@ -10,10 +10,10 @@ from typing import Iterator
 # Moreover, the desired outputs provided by the user can be interpreted as a vertex of the hypercube, and we calculate the differences between the vector coordinates of the
 # endpoints of the parallelepiped and those of the user's vertex that was sent into the reduced space.
 # The differences will always be the same, regardless of the user's desired outputs, and can be derivate into integer constants.
-# These integer constants can be added during the calculation of the coordinates of the user's vertex in the reduced space, in order to obtain the extreme coordinates of the 
+# These integer constants can be added during the calculation of the coordinates of the user's vertex in the reduced space, in order to find the extreme coordinates of the 
 # parallelepiped in each dimension. 
-# In other words, we can bound the variables in the integer linear combinations of the candidate solutions, without having to deal with matrix calculations and floating 
-# numbers at the runtime.
+# In other words, we can bound the variables in the integer linear combinations of the candidate solutions, without having to deal with matrix calculations and floating numbers
+# at the runtime.
 
 # In two dimensions, we use modular arithmetic and the fact that we know the strict upper bound of the unknowns (2^16 in our case), to avoid bounding one of the two variables in 
 # the linear combinations and, on average, perform fewer iterations than if we had calculated these linear combinations.
@@ -26,7 +26,7 @@ from typing import Iterator
 # and the coefficient with the highest absolute value in the adjacent column, which will serve as the modulus.
 # The average number of iterations can be estimated with the following formula: range * 2^16 / abs(modulus).
 # To ensure that the calculations in the code are performed correctly, the modulus must be positive and located on the first row of the Lagrange-reduced matrix.
-# If the modulus is located on the second row, we can swap the rows by building the lattice matrix from the reversed version of the LCG, and then apply Lagrange's algorithm to it.
+# If the modulus is located on the second row, we can swap the rows by building the lattice matrix from the reversed version of the LCG and then apply Lagrange's algorithm to it.
 # In the case where the modulus is negative, we multiply the Lagrange-reduced matrix by -1 to obtain a positive modulus.
 # At the end, LAG0 and LAG1 are respectively the top left and top right coefficients of the resulting matrix.
 # If we bound the first variable, LAG1 is the modulus and LAG0 is reduced modulo LAG1, and vice-versa for the second variable.
