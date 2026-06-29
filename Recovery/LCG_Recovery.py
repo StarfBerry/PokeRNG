@@ -34,7 +34,7 @@ from typing import Iterator
 # To take advantage of this even when the determinant is negative, we transfer the sign of the determinant to the constant involved in the multiplication just before the modulo.
 # Thus, if the determinant of a Lagrange-reduced matrix is negative, the opposite of LAG0 or LAG1 (not the modulus) is used to compensate.
 
-# LOWER and UPPER constants are used to bound the variables in the linear combinations of the potential solutions.
+# LOWER and UPPER constants are used to bound the variables in linear combinations in order to calculate potential solutions.
 # In the 2-dimension case, the constants returned by the Sage script have been divided by 2^16, and extra values were added to most of them.
 # The division by 2^16 is due to the fact that the divisions by the determinant of the Lagrange-reduced matrices have been split into 2 subdivisions, and we assume that the 
 # constants have already been divided during the first subdivision. 
@@ -435,7 +435,7 @@ M = (0x343FD, 0xA9FC6809, 0x45C82BE5, 0xDDFF5051, 0x284A930D)
 # Increment constants
 I = (0x269EC3, 0x1E278E7A, 0xD2F65B55, 0x98520C4, 0xA2974C77)
 
-# Constants to bound the variables in the linear combinations of the potential solutions
+# Constants to bound the variables in the linear combinations for calculating potential solutions
 CHANNEL_LOWER = (0x2AB966D1C2, 0x2169A3AA47, -0x5049D5FDC, -0x2AACDA387, 0xFE7FFFFFF, -0x898000001)
 CHANNEL_UPPER = (0x2E8966D1C3, 0x23D9A3AA48, -0x3549D5FDB, -0xDACDA386, 0x1098000000, -0x7E8000000)
 
