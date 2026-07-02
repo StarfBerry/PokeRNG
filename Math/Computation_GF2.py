@@ -128,7 +128,8 @@ if __name__ == "__main__":
     print(hex(charpoly)) # 0x1000000010046d8b3f985d65ffd3c8001
     '''
     
-    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486, 127, 4)
+    # The characteristic polynomial of TinyMT can be factored by the monomial x.
+    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486 >> 1, 127, 4)
 
     #print_jump_table_in_hex(0x10008828e513b43d5095b8f76579aa001, 128, 4)
 
