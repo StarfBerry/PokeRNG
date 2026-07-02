@@ -2,6 +2,8 @@ import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from RNG import MT
 
+from typing import Sequence
+
 def mt_untemper(t: int) -> int:
     t ^= t >> 18
     t ^= (t << 15) & 0xEFC60000
@@ -20,6 +22,18 @@ def mt_reverse_init_loop(s: int, p: int) -> int:
     for i in reversed(range(1, p + 1)):
         s = mt_reverse_init_step(s, i)
     return s
+
+def mt_recover_seed_from_state(state: Sequence[int], max_advc: int = 10_000) -> int | None:
+    mt = MT(state)
+    n = (max_advc + 623) // 624
+
+    for _ in range(n + 1):
+        s = mt.state[1]
+        if all(mt.state[i] == (s := (0x6C078965 * (s ^ (s >> 30)) + i) & 0xffffffff) for i in range(2, 624)):
+            return mt_reverse_init_step(mt.state[1], 1)
+        mt.untwist()
+    
+    return None
 
 # Based on: https://blog.lexfo.fr/php-mt-rand-prediction.html
 def mt_recover_seed_from_untempered_outputs(curr_s0: int, curr_s227: int, ofs: int = 0) -> int | None:
@@ -47,27 +61,21 @@ def mt_recover_seed_from_untempered_outputs(curr_s0: int, curr_s227: int, ofs: i
 
     return None
 
-def mt_recover_seed_from_tempered_outputs(t0: int, t227: int, ofs: int = 0): 
-    u0 = mt_untemper(t0)
-    u227 = mt_untemper(t227)
-    return mt_recover_seed_from_untempered_outputs(u0, u227, ofs)
-
 if __name__ == "__main__":
-    from random import randrange
+    from random import getrandbits, randrange
 
     mt = MT(0)
-    p2 = 1 << 32
     n = 10_000
 
     for _ in range(n):
-        seed = randrange(0, p2)
-        mt.reseed(seed)
-
+        seed = getrandbits(32)
         ofs = randrange(0, 396)
+        
+        mt.reseed(seed)
         mt.advance(ofs)
         a = mt.next_u32()
         mt.advance(226)
         b = mt.next_u32()
-        seed_ = mt_recover_seed_from_tempered_outputs(a, b, ofs)
         
-        assert seed == seed_, f"{seed = }, {ofs = }, {seed_ = }"
+        seed_ = mt_recover_seed_from_untempered_outputs(mt_untemper(a), mt_untemper(b), ofs)
+        assert seed == seed_, f"{seed = }, {seed_ = }, {ofs = }"

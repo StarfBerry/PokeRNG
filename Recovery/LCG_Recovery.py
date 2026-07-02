@@ -9,7 +9,7 @@ from typing import Iterator
 # Next, we look at the minimum and maximum coordinates in all dimensions to find the endpoints of the resulting parallelepiped.
 # Moreover, the user's desired outputs can be interpreted as a vertex of the hypercube, and we calculate the differences between the vector coordinates of the endpoints of the
 # parallelepiped and those of the user's vertex that was sent into the reduced lattice.
-# As long as the lengths of the output ranges provided by the user remain the same, the differences will also remain the same and can be expressed as integer constants.
+# As long as the lengths of the output ranges provided by the user remain the same, the differences will remain unchanged and can be expressed as integer constants.
 # These integer constants can be added when calculating the coordinates of the user's vertex in the reduced lattice to obtain the extreme coordinates in each dimension.
 # In other words, we can bound the variables in the linear combinations to find all the solutions without resorting to matrix calculations or floating-point numbers at runtime.
 
@@ -19,12 +19,12 @@ from typing import Iterator
 # In the Sage script, a different lattice reduction algorithm is used, the BKZ algorithm, which can be applied to any dimension and will produce the same results in 2D. 
 # However, Lagrange's algorithm was the first to be used during the implementation of the code, and it's also the oldest lattice reduction algorithm ever documented.
 # This is why Lagrange's name has been retained in the name of certain constants, as well as to name and illustrate the reduced matrices in the comments.
-# To begin computing the constants, we build the matrix representing the lattice on which we will work, and then we apply Lagrange's algorithm to it.
+# To begin computing the constants, we construct the matrix representing the lattice on which we will work, and then we apply Lagrange's algorithm to it.
 # Next, we choose the variable to bound by looking for the one that minimizes the average number of iterations based on its range (which can be determined with the Sage script)
 # and the coefficient with the highest absolute value in the adjacent column, which will serve as the modulus.
 # The average number of iterations can be estimated with the following formula: range * 2^16 / abs(modulus).
 # To ensure that the calculations in the code are performed correctly, the modulus must be positive and located on the first row of the Lagrange-reduced matrix.
-# If the modulus is on the second row, we can swap the rows by building the lattice matrix from the reversed version of the LCG, while applying Lagrange's algorithm to it.
+# If the modulus is on the second row, we can swap the rows by constructing the lattice matrix from the reversed version of the LCG, while applying Lagrange's algorithm to it.
 # In the case where the modulus is negative, we multiply the Lagrange-reduced matrix by -1 to obtain a positive modulus.
 # At the end, LAG0 and LAG1 are respectively the top left and top right coefficients of the resulting matrix.
 # If we bound the first variable, LAG1 is the modulus and LAG0 is reduced modulo LAG1, and vice-versa for the second variable.
