@@ -93,23 +93,22 @@ def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int):
 
     for i in range(axis_length):
         a = bit_vector_to_int(get_axis(i))
-        print(f"0x{a:0{hex_size}x},", end = "\n" if (i + 1) % per_line == 0 else " ")
+        print(f"0x{a:0{hex_size}x},", end = " " if (i + 1) % per_line else "\n")
     
     if axis_length % per_line:
         print()
 
-def print_jump_table_in_hex(charpoly: int, size: int, per_line: int):
-    hex_size = (charpoly.bit_length() - 1 + 3) // 4
+def print_jump_table_in_hex(apoly: int, size: int, per_line: int):
+    hex_size = (apoly.bit_length() - 1 + 3) // 4
 
     for i in range(size):
-        poly = poly_pow_mod_gf2(2, 1 << i, charpoly)
-        print(f"0x{poly:0{hex_size}x},", end = "\n" if (i + 1) % per_line == 0 else " ")
+        poly = poly_pow_mod_gf2(2, 1 << i, apoly)
+        print(f"0x{poly:0{hex_size}x},", end = " " if (i + 1) % per_line else "\n")
     
     if size % per_line:
         print()
 
 if __name__ == "__main__":
-    
     '''
     mat = function_to_matrix_gf2(tinymt_next, 128, 128)
     charpoly = matrix_charpoly_gf2(mat)
@@ -130,7 +129,12 @@ if __name__ == "__main__":
     print(hex(charpoly)) # 0x1000000010046d8b3f985d65ffd3c8001
     '''
     
+    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486, 127, 4)
+
     # The characteristic polynomial of the TinyMT can be factored by the monomial x to obtain an annihilating polynomial of lower degree.
+    # However, if we call the jump function on a state that cannot be generated from the recurrence relation, the most significant bit of state[0] may differ from the one obtained if
+    # we had used the characteristic polynomial.
+    # This has no impact on the outputs, since the next state function is called just before they are calculated.
     print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486 >> 1, 127, 4)
 
     #print_jump_table_in_hex(0x10008828e513b43d5095b8f76579aa001, 128, 4)

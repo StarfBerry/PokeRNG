@@ -160,15 +160,13 @@ if __name__ == "__main__":
 
     rng = TinyMT(0)
     n = 10_000
+    bits = [0] * 127
 
     for _ in range(n):
-        seed = getrandbits(32)
-        advc = getrandbits(16)
-        
-        rng.reseed(seed)
-        rng.jump(advc)
+        rng.restate(getrandbits(32), getrandbits(32), getrandbits(32), getrandbits(32))
+        rng.advance(1 + getrandbits(10))
         state = rng.state
-        bits = tuple(rng.next_u32() & 1 for _ in range(127))
+        for i in range(127): bits[i] = rng.next_u32() & 1
 
         state_ = tinymt_recover_state_from_127_bits(bits)
-        assert state == state_, f"{state = }, {state_ = }, {seed = :08X}, {advc = }"
+        assert state == state_, f"{state = }, {state_ = }"
