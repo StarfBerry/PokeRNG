@@ -135,7 +135,7 @@ if __name__ == "__main__":
     # However, if we call the jump function on a state that cannot be generated from the recurrence relation, the most significant bit of state[0] may differ from the one obtained if
     # we had used the characteristic polynomial.
     # This has no impact on the outputs, since the next state function is called just before they are calculated.
-    print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486 >> 1, 127, 4)
+    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486 >> 1, 127, 4)
 
     #print_jump_table_in_hex(0x10008828e513b43d5095b8f76579aa001, 128, 4)
 
@@ -143,11 +143,11 @@ if __name__ == "__main__":
 
     '''B = function_to_matrix_gf2(tinymt_127_bits_sequence, 127, 128)
     B = np.delete(B, 31, 1) # delete the 31st column to make the matrix invertible
-    A = function_to_matrix_gf2(tinymt_next, 128, 128)
-    A_124 = matrix_pow_gf2(A, 124)
-    A_124 = np.delete(A_124, 31, 0)
-    A_124 = np.delete(A_124, 31, 1)
-    P = (A_124 @ matrix_inverse_gf2(B)) & 1
+    N = function_to_matrix_gf2(tinymt_next, 128, 128)
+    A = matrix_pow_gf2(N, 124)
+    A = np.delete(A, 31, 0)
+    A = np.delete(A, 31, 1)
+    P = (A @ matrix_inverse_gf2(B)) & 1
     print_bit_matrix_in_hex(P, 1, 4)'''
 
     '''B = function_to_matrix_gf2(xoroshiro128plus_128_bits_sequence, 128, 128)
