@@ -340,7 +340,7 @@ n1 = MRNG(ARNG(x)) >> 16
    = (0x41C64E6D * (0x6C078965 * (0xEEB9EB65 * X + 0xFC77A683) + 0x1) + 0x3039) >> 16
    = (0x6C078965 * X + 0xCA55F729) >> 16
 
-In this way, the LCGs were combined into a single one, which can be used to build the lattice matrix.
+In this way, the LCGs were combined into a single one, which can be used to construct the lattice matrix.
 However, it's more advantageous to work with the reversed version of this new LCG, since it yields the smallest average number of iterations.
 
 
@@ -358,7 +358,7 @@ LOTTO_R_LOWER = 0xC0928805 # (0xC09188056124 + 0xffff_ffff) >> 16
 LOTTO_R_UPPER = 0xC092F075 # (0xC092F0756124 >> 16)
 
 # around 1.46 iterations in averages
-def recover_group_seeds_from_2_lotto_numbers(n0: int, n1: int) -> Iterator[int]:    
+def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:    
     tmp = ((LOTTO_R_MULT * n1 - n0) & 0xffff) * LOTTO_R_LAG1
     lo = (tmp + LOTTO_R_LOWER) >> 16 
     up = (tmp + LOTTO_R_UPPER) >> 16
@@ -377,6 +377,52 @@ def recover_group_seeds_from_2_lotto_numbers(n0: int, n1: int) -> Iterator[int]:
             seed = ((n1 | lbits) * LOTTO_R_MULT + LOTTO_R_INC) & 0xffffffff
             if (seed >> 16) == n0:
                 yield (seed * R_MULT + 0xFC77A683) & 0xffffffff
+
+#################################################################################################################################################################
+
+'''
+In Pokémon Ranch, PIDs are generated from a time base register, so there is no PID-IVs correlation but it's still possible to check if an IVs combination is valid.
+IVs are generated as following:
+
+first  = (seed >> 16) & 0x7fff
+second = (MRNG(seed) >> 16) & 0x7fff
+third  = (MRNG^2(seed) >> 16) & 0x7fff
+
+rnd32 = ((second << 30) | (first << 15) | third) & 0xffff_ffff
+
+ivs = [(rnd32 >> (5 * i)) & 31 for i in range(6)] # hp, atk, dfs, spe, spa, spd
+
+As we can see, only 'first' and 'third' are used to generate the IVs.
+Furthermore, LCRNG^2 and MRNG^2 share the same multiplier, so we can use certain constants that were defined previously.
+'''
+
+RANCH_R_INC   = 0x8C319932 # increment constant
+RANCH_R_LOWER = 0x670A0357 # ((-0x5277CA86A92 + 0x7fff_ffff) >> 16) + (27697 << 16)
+RANCH_R_UPPER = 0x670A2A11 # (-0x526D5EE6A92 >> 16) + (27697 << 16)
+
+# around 3.08 iterations in average
+def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
+    first = ((spd << 10) | (spa << 5) | spe) << 16
+    third = ((dfs << 10) | (atk << 5) | hp ) << 16
+    
+    tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
+    lo = (tmp + RANCH_R_LOWER) >> 15
+    up = (tmp + RANCH_R_UPPER) >> 15
+
+    # each loop performs at most 3 iterations
+    for lbits in range((lo * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
+        seed = ((third | lbits) * R_MULT_2 + RANCH_R_INC) & 0xffffffff
+        if (seed & 0x7fff0000) == first:
+            yield seed
+            yield seed ^ 0x80000000
+    
+    # true in around 30% of cases
+    if lo != up:
+        for lbits in range((up * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
+            seed = ((third | lbits) * R_MULT_2 + RANCH_R_INC) & 0xffffffff
+            if (seed & 0x7fff0000) == first:
+                yield seed
+                yield seed ^ 0x80000000
 
 #################################################################################################################################################################
 
