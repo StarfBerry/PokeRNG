@@ -62,14 +62,14 @@ def swsh_recover_random_shiny_raid_seeds(ec: int, pidl: int, ivs: list[int], shi
         px = pidh ^ pidl
         for seed in xoroshiro_recover_seeds_with_skip(ec, (pidh << 16) | pidl):
             rng.reseed(seed)
-            rng.advance(1) # ec
+            rng.next_state() # ec
             sidtid = rng.next_u32()
             x = (sidtid >> 16) ^ (sidtid & 0xffff) ^ px
 
             if not_shiny(x):
                 continue
             
-            rng.advance(1) # pid
+            rng.next_state() # pid
 
             s0, s1 = rng.state
             

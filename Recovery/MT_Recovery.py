@@ -64,18 +64,36 @@ def mt_recover_seed_from_untempered_outputs(curr_s0: int, curr_s227: int, ofs: i
 if __name__ == "__main__":
     from random import getrandbits, randrange
 
-    mt = MT(0)
-    n = 10_000
+    def test_mt_recover_seed_from_state(n: int = 10_000):
+        mt = MT(0)
 
-    for _ in range(n):
-        seed = getrandbits(32)
-        ofs = randrange(0, 396)
-        
-        mt.reseed(seed)
-        mt.advance(ofs)
-        a = mt.next_u32()
-        mt.advance(226)
-        b = mt.next_u32()
-        
-        seed_ = mt_recover_seed_from_untempered_outputs(mt_untemper(a), mt_untemper(b), ofs)
-        assert seed == seed_, f"{seed = }, {seed_ = }, {ofs = }"
+        for _ in range(n):
+            seed = getrandbits(32)
+            advc = randrange(0, 10_000)
+
+            mt.reseed(seed)
+            mt.advance(advc)
+
+            seed_ = mt_recover_seed_from_state(mt.state)
+            assert seed == seed_, f"{seed = }, {seed_ = }, {advc = }"
+
+    def test_mt_recover_seed_from_untempered_outputs(n: int = 10_000):
+        mt = MT(0)
+
+        for _ in range(n):
+            seed = getrandbits(32)
+            ofs = randrange(0, 396)
+            
+            mt.reseed(seed)
+            mt.advance(ofs)
+            a = mt.next_u32()
+            mt.advance(226)
+            b = mt.next_u32()
+            
+            seed_ = mt_recover_seed_from_untempered_outputs(mt_untemper(a), mt_untemper(b), ofs)
+            assert seed == seed_, f"{seed = }, {seed_ = }, {ofs = }"
+    
+
+    #test_mt_recover_seed_from_state()
+    
+    #test_mt_recover_seed_from_untempered_outputs()

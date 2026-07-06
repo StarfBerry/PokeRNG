@@ -50,15 +50,15 @@ def xorshift128_next(state128: int) -> int:
 
     return (s3 << 96) | (s2 << 64) | (s1 << 32) | s0
 
-def tinymt_127bits_sequence(state128: int) -> int:
+def tinymt_127_bits_sequence(state128: int) -> int:
     bits = 0
     for i in range(127):
         state128 = tinymt_next(state128)
-        b = (state128 >> 96) & 1 # the output reveals the least significant bit of state[3]
+        b = (state128 >> 96) & 1 # temper(state) & 1 == state[3] & 1
         bits |= b << i
     return bits
 
-def xoroshiro128plus_128bits_sequence(state128: int) -> int:
+def xoroshiro128plus_128_bits_sequence(state128: int) -> int:
     bits = 0
     for i in range(128):
         b = (state128 ^ (state128 >> 64)) & 1 # <==> (s0 + s1) & 1
@@ -141,11 +141,16 @@ if __name__ == "__main__":
 
     #print_jump_table_in_hex(0x1000000010046d8b3f985d65ffd3c8001, 128, 4)
 
-    '''mat = function_to_matrix_gf2(tinymt_127bits_sequence, 127, 128)
-    mat = np.delete(mat, 31, 1) # delete the 31st column to make the matrix invertible
-    inv = matrix_inverse_gf2(mat)
-    print_bit_matrix_in_hex(inv, 1, 4)'''
+    '''B = function_to_matrix_gf2(tinymt_127_bits_sequence, 127, 128)
+    B = np.delete(B, 31, 1) # delete the 31st column to make the matrix invertible
+    A = function_to_matrix_gf2(tinymt_next, 128, 128)
+    A_124 = matrix_pow_gf2(A, 124)
+    A_124 = np.delete(A_124, 31, 0)
+    A_124 = np.delete(A_124, 31, 1)
+    P = (A_124 @ matrix_inverse_gf2(B)) & 1
+    print_bit_matrix_in_hex(P, 1, 4)'''
 
-    '''mat = function_to_matrix_gf2(xoroshiro128plus_128bits_sequence, 128, 128)
-    inv = matrix_inverse_gf2(mat)
-    print_bit_matrix_in_hex(inv, 1, 4)'''
+    '''B = function_to_matrix_gf2(xoroshiro128plus_128_bits_sequence, 128, 128)
+    A = function_to_matrix_gf2(xoroshiro128plus_next, 128, 128)
+    P = (matrix_pow_gf2(A, 128) @ matrix_inverse_gf2(B)) & 1
+    print_bit_matrix_in_hex(P, 1, 4)'''

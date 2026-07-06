@@ -4,7 +4,7 @@ XOROSHIRO_CONST = 0x82A2B175229D6A5B
 
 def xoroshiro_recover_seeds(first: int, second: int) -> Iterator[int]:
     """
-    Recovers the seeds of a Xoroshiro128+ instance from two consecutive 32-bit outputs, assuming that s1 was initially equal to 0x82A2B175229D6A5B.
+    Recovers the 64-bit seeds of a Xoroshiro128+ instance from two consecutive 32-bit outputs.
 
     The algorithm solves equations by brute-forcing 6 bits of the seeds and 1 carry bit. 
     """
@@ -51,7 +51,7 @@ def xoroshiro_recover_seeds(first: int, second: int) -> Iterator[int]:
 
 def xoroshiro_recover_seeds_with_skip(first: int, third: int) -> Iterator[int]:
     """
-    Recovers the seeds of a Xoroshiro128+ instance from two 32-bit outputs with a skip in between, assuming that s1 was initially equal to 0x82A2B175229D6A5B.
+    Recovers the 64-bit seeds of a Xoroshiro128+ instance from two 32-bit outputs with a skip in between.
 
     The algorithm solves equations by brute-forcing 8 bits of the seeds and 2 carry bits.   
     """
@@ -174,76 +174,77 @@ def xoroshiro_recover_state_from_128_bits(bits: Sequence[int]) -> tuple[int, int
     s0 = s1 = 0
     for i in range(128):
         if bits[i] == 1:
-            s0 ^= XOROSHIRO_128_LSB_INV[i][0]
-            s1 ^= XOROSHIRO_128_LSB_INV[i][1]
+            s0 ^= XOROSHIRO_128_LSB_INV_THEN_ADVC_128[i][0]
+            s1 ^= XOROSHIRO_128_LSB_INV_THEN_ADVC_128[i][1]
     
     return (s0, s1)
 
-XOROSHIRO_128_LSB_INV = (
-    (0x03ac280f24470247, 0xee877b8ab9aaf07c), (0xef399b01e298f8f8, 0xbaf4cc8205ecc324), 
-    (0x2b5e9c990fd8cf61, 0x3b71fa802a0f6905), (0xd740b55146ce0aa9, 0xd610ce196f15857d), 
-    (0x0e8cd9b013f7ca2e, 0xc5f4759bfd474c5e), (0x746982eb0415fd46, 0xab83b889f23a5eea), 
-    (0x8de082e90f05404c, 0xc271501e5a595d88), (0x96caccb5de0e16c3, 0x64180659981d9c43), 
-    (0x1cd6f1b6e83b7705, 0xd0161d54f31bb737), (0x51c7ef66f7928fe6, 0xf65f32df49123f0c), 
-    (0xb676703a77192c69, 0x4c3ee1c210abd5ff), (0x76db67f85cd4f47a, 0x665e3957a6b50374), 
-    (0x2c05b063f56cd10e, 0x91301878565e20c4), (0x25fde5109522ee16, 0x0a6447932c469cee), 
-    (0x4dcc2a8878a1a4c7, 0xd4ae1e6f08f286fb), (0xf4781cae98271891, 0x6114db1cdb6f9a59), 
-    (0xf7be496e71ab74f5, 0x116535bcbaa3d22d), (0x8ef17003de787677, 0x860f3d172b1eade1), 
-    (0xa00f9fc2c6895cab, 0x19576aadcab92543), (0x154bd60854092022, 0x96354ca7d12e694c), 
-    (0xde266f57ac86f1dd, 0x0d844f9855daa983), (0x96d3a1c9c4a27796, 0x547d7485dcce55ea), 
-    (0xa59c32ca9a81c57d, 0x8b7a4065c8222ed9), (0xdabb56958fa8e5c3, 0x19d11466de1ec5fb), 
-    (0xc6c14815403f7698, 0x1d1aedbf051c0c00), (0xb90dddd1adef9fd0, 0xac0e6e3430eaba86), 
-    (0xfd4089427afa67ac, 0xb1ec8f13d277e6e6), (0x0d03d4dce403fa2b, 0x93906bebd18c9e53), 
-    (0xc3d55c38596bb0bc, 0x70726b4f581ac1d8), (0xb223e66f1b49b509, 0xc8e33061d8ca2653), 
-    (0x8e00a2e2f36e18db, 0x6deda055f0c4f363), (0x0375d9061d9e1685, 0xacf3fe9d06f17b87), 
-    (0x0d8971609e6fbdbf, 0xe5befabca308224b), (0x94e642a6a7285d71, 0x9cd5503165e8589f), 
-    (0x4c5bd85229bb86b6, 0x2a5fc91348b0de0c), (0xa178fe50ee3ff0b6, 0x3b3d78a08f6d0efe), 
-    (0x20b75bc25020fcb3, 0xc9e760303c14e54d), (0x6d6b9a0959d5a542, 0x01a06ea6aa776c78), 
-    (0xae0a1fec7fa665dd, 0x7672f70a22469493), (0xadf265cbbcb0fb73, 0xfce0516f27036ccb), 
-    (0xdf55d0c0886648a6, 0x4b4698234a6cb816), (0xfed04fafe2405849, 0x09a879eacdf79eb3), 
-    (0xc1b7ae1b6e2c157e, 0x7af3416b6b8ca48a), (0xf3235df0ebdfeae0, 0x45546b5125e582d0), 
-    (0xaf49ba561af3ccca, 0x2666964098d96f90), (0x72f87860f3f019af, 0x763eb31c72c32d1d), 
-    (0xd9ec3788068ab9ed, 0x3a7a2ee0ed3b4c75), (0x2dc4b20bc2033a39, 0xc7863bedf63d1975), 
-    (0xe3a7cea59ab3fe1a, 0x613d75eba9623dfe), (0x16b99da0276b41c5, 0xa6d9dfca498f5851), 
-    (0xa38f3b3e376a5464, 0xf1c341fcba5c9a9a), (0xe8e243adad4f66bd, 0xe01bf4fce72c8e89), 
-    (0xeb1532648b2fdb7a, 0xe107059559c2f6e6), (0x0be356566c12db84, 0xa12d41e15b1ae3a8), 
-    (0x171da3d902834004, 0xf0ee2741da67d830), (0x3e313e270f1a9ff4, 0x30e200e6889deece), 
-    (0x9923dbea27e7d429, 0x404c6719cb8d3615), (0xddb7113ecf1858ee, 0x13eb788e651a3bd6), 
-    (0x43032a7f41707f24, 0x302bfba1f1ef24e0), (0x2f8cd13a8f15db58, 0xcd28fb98137976be), 
-    (0xa09c8424a2ece63e, 0x60074f915485a1e2), (0x90dc420737ba2b8b, 0x1a786f0824ba11f7), 
-    (0x11e8f301762a5b4c, 0x50cd238ecef99834), (0xb03250ab5e9d46bd, 0xc6459c6afc1b2fa1), 
-    (0x4fc676318bc0e63b, 0xf50dfcc9181f38e3), (0x8e89ddfec1905efb, 0xc6492439de38311d), 
-    (0x80bbf28ed4b54621, 0xa3616083a76afd3b), (0xaa4d25ca69787c02, 0xb7767223b4637706), 
-    (0x5163bba3724ccba8, 0xa1ebf39eda1a8a02), (0xdf943473e37afc38, 0x2944e023f675a3a4), 
-    (0x327711621eff26a2, 0xc0efeffaa258f398), (0x84f5f52fdd57fbe0, 0xbccc613686bd76a4), 
-    (0xbb34c1d4517c7edc, 0xe22a79e4e977efee), (0xa1813b2c244eb832, 0x6be1d7d6ceb219c6), 
-    (0xafb68c873a98bd19, 0x19c31c4909c7b3a7), (0xb4a5fbda6589d41a, 0xfcebc6475d47ccf8), 
-    (0x5c8a28b028025afc, 0x666016d7efe504ce), (0x875a4acbd373a55b, 0x382562eda040a5ed), 
-    (0xa62264e0536127d6, 0x260b324aa74dfefa), (0xc37e449cefda27db, 0x96442b6b3eea7e49), 
-    (0x30aaa8c65f1cdec5, 0x8476a8b18e430da5), (0x79c7a8ab91db8a81, 0x189ee3432015cdff), 
-    (0x057d9bcea8fe009e, 0x1c7d35a1503af784), (0xb3451bd7642b9326, 0x54ef9feed92588b0), 
-    (0x7043f1e6edf237dd, 0xeba18e26f2b8b919), (0xdd97848d3abc7169, 0x072912c0680c8f23), 
-    (0x1339ffbaaef8cd6a, 0x10799bc3b6c185fc), (0xa501b402a0131682, 0xb8b7b82d4090da5c), 
-    (0x14076b46f39017bf, 0x9328be118bb85845), (0xf9524f5a98851d9a, 0x750f8d98b41c586a), 
-    (0x4161f6de31fe31b7, 0x84c1141d62564ddb), (0x783917181d9896e5, 0x932ba576c1be9e45), 
-    (0x2967e635e288712b, 0x7241414253fcde3b), (0x107b21dd09db5633, 0x02e4c72cd2495c39), 
-    (0xf6dc22332ce429a0, 0x7d653b57791efda2), (0xd5007abaf9c63516, 0x6ec88d57ea2d1ccc), 
-    (0xda717c02b7712ade, 0x652014e4d4076eb4), (0xfc8651c880a35c53, 0x370d3938be67aecf), 
-    (0xd199b20b275204d7, 0xf941dcf8c3079f25), (0x7ca618245ce63a41, 0x57957758eec1c69d), 
-    (0xe091fbb5e4fcac1d, 0x27e7f5810e4007a7), (0x6f93b1e8dec2b7e2, 0x67e1b1d5e7fd884e), 
-    (0x73ba6c2cee2e95a0, 0xdc85806e9d11982e), (0xca158b84b7d10bf3, 0x53d654c05cd8d5cb), 
-    (0xe9b9550e5d17b45f, 0xeb5f93a0078906f9), (0xd3e4eaae96956129, 0x3ef3f11cc4226f8f), 
-    (0xeafea126b9802570, 0x0cdfb25ac077baf8), (0x74d8e2812adc9784, 0xa2db5f56eaba6a16), 
-    (0x304d7e10dd84c745, 0x8718ad4068921dbf), (0xd6022fa3e412c5e4, 0xd546bf4e182a008e), 
-    (0x42f01ef6c7090da7, 0x32314ef2b1a3385d), (0xec2bf8c19ba9a7e3, 0x948db286efd5dfaf), 
-    (0x99ca7775a82a988a, 0xaeb4d988d48ef51e), (0x933e46a8c6f5a8fb, 0xd59a310033800e37), 
-    (0xd1797392d3f875a9, 0xd0e573e36d54a421), (0xe3f21e60169f36b1, 0x15b3e8c485f5ef15), 
-    (0x74a9f768a519b521, 0x508658100db42a67), (0x5d87e155976cbfad, 0xddea4006ade88d6d), 
-    (0x83edad2c83cbd1ab, 0xb682e947ed2483ab), (0x35c6e19899d485c9, 0x0aafc585c4609283), 
-    (0xadfbe51f71fd59ff, 0x83d8e18b69a827d3), (0xef9ef3b788383f2a, 0xb4d3b2891426f826), 
-    (0x0aa2be90fef1d020, 0x42038951cb574db4), (0xabcc6a3e95a6ed40, 0x2596d05337b6f10a), 
-    (0x085bc285f98c9a72, 0x91e6750da8a02cf0), (0xaba9da6479476d4e, 0xc6ecdb03fdc85ee6), 
-    (0xa80b96f6b0aea429, 0xb7e5d4018699c2f1), (0xb18a896a28d55e13, 0xbdbe477da56a70b3),
+# XOROSHIRO^128 * XOROSHIRO_128_LSB_INV
+XOROSHIRO_128_LSB_INV_THEN_ADVC_128 = (
+    (0xbc3a7223e4917777, 0x7e20dc0c3a48212e), (0x8071979ce140db91, 0xe1a3d69592b1dd71),
+    (0xf9c525a20f967a70, 0x5550ab49809b64c4), (0x66ff2a6ee7dc2ea8, 0x2afbf148c576abf2),
+    (0x01f122958b0e66a9, 0x47da97ca1a59b923), (0x8eb2179ceaf56245, 0xde60da55f0cbb6fb),
+    (0xd464977c8394d832, 0x7be2cacb5d67dee0), (0x1dce64b078aa5496, 0x47255a477b7542c0),
+    (0x417e448c03cc9f50, 0x7aa5ee9a01f5b582), (0x6db0243cddfaf53f, 0xbdbf8990ce2fda4b),
+    (0x5b0973951307037c, 0xdd780d474eeaff30), (0x86c3163687a28755, 0xbcb441cf0149473f),
+    (0x49255bb4f0a1ead8, 0x312f118d0d4448d6), (0x18a82620ed590c4e, 0xb2d8aa498209229b),
+    (0x9dc91c1dacb2a2f5, 0xd1d95509712467a7), (0x28522fd69990d92f, 0xa1c1a2c479c745de),
+    (0x88d43931b2e0f661, 0xab1a031f47eefb77), (0x1c1c0b26d462c5a8, 0x2439d2d2b7e343e9),
+    (0xd50b3e93bc581853, 0x40b4248cf579d6c5), (0xc583055ff24b5740, 0x603265c60697a03d),
+    (0xd8fe1c6b52c228fd, 0x2ad00f45671aed8a), (0xeea88724aa9a5183, 0xc5905048fbccd1f9),
+    (0x34d301cff92f87e6, 0x730d674037030564), (0x31d6ae0ea4ab0bc6, 0xf274180a59ea36a5),
+    (0x4491741148415f5c, 0xd4448b8bb90ba9c5), (0x03417267f3968a35, 0x9c93810603edf830),
+    (0xc62c4f7f7b08359c, 0x34298e912135ffcd), (0xdd79e8e0db89205e, 0x5470471eb2286c2a),
+    (0xae9814486d68557c, 0x9913f906e112811d), (0x68cab40d986c881e, 0x5fc2200574a417d6),
+    (0x2ea36c4035b73a4c, 0xc71ce2d159907d15), (0x99dd5a278741907c, 0x1311d9cf2979776a),
+    (0x171eb22b2dc10459, 0x6e5579907d598a97), (0xc395e77b44547a4a, 0x8265850021ff87df),
+    (0xd36c101d407621e3, 0x1079420c62bc5b92), (0xe5ebf352a562421a, 0x86fe118e35e1880a),
+    (0x6588e4bbe03a5276, 0xd63d46d46ad4f4a3), (0x018232429fccd863, 0x60ce3bc85fa4640c),
+    (0xa893cf43bbe313fa, 0x2874424c063c347d), (0xb2b1e82901c7a3f0, 0xd280098ae88401e2),
+    (0xa399cee61e4fc560, 0x36c740c6d6029375), (0x43c514a256e2bcfa, 0xb76fae16218dd0a5),
+    (0x95fbf8bfa8c6eb71, 0xe6ed38155ba4c058), (0x8db8c33ac088fd71, 0xe57f4b17d966c2e8),
+    (0xfb07290564b2067d, 0x45cc1f122399fc25), (0x646685a5faccca2e, 0xf57a4a44d0e2aad6),
+    (0x35187c57b727589f, 0x139f6901008c8acd), (0x4f99a57aaee1ea53, 0x85876f0318a44742),
+    (0x09eb595682021bf6, 0xd334d54348f776d7), (0x8d872e8bfecd0eed, 0x55da3b129e8dfe1e),
+    (0xbbdf357683b3d5dd, 0x2f2b5a86711d0405), (0xa2b57b4393655887, 0x53273d4c64c5540a),
+    (0xaa5b1fc8d7920d8f, 0x0b679b475bd2623c), (0x13315503946c820b, 0x29efc6127437bed1),
+    (0xafc6491e82f0cd14, 0xfe7d5ac7d566e57d), (0xd527c2a64691c687, 0xeb8cf58da9622c51),
+    (0xdd9b598aeacdefd9, 0x72cae6c7bb48de2c), (0x6db8efa6b07cedde, 0x5062a957d3eabae8),
+    (0xb5f89486f0f8f2e7, 0x0b67c151b27be7ad), (0x15f69fc4b2b297d1, 0x5a7feed60430ff82),
+    (0x1768a7222b0aeb5f, 0xa74920de39d91429), (0x36a2592e0722b92f, 0xc76c918f4a18f029),
+    (0x95dda38b73d0942d, 0xef8d640a3debf0a1), (0x8cff0d9bb7f37217, 0xdd10521eb88f1937),
+    (0x37caf522165acdfc, 0x001423c4766b1935), (0x446ce24cb005eb1f, 0x67dfba8518054a01),
+    (0x532cb96518525531, 0xb9f63d1acdb5febc), (0x75e4d92ab4f35f4c, 0xa38976df513ceea4),
+    (0xe52e884bfc8a34ad, 0xddbdc111074f2942), (0x6fdaa5145ee7ec04, 0xe7e0dc5e480a020c),
+    (0x86d094ee6e034c48, 0xb68a6ad1d7e51cf3), (0x5d256c036cb0cad7, 0x1180eacb2fddcfd8),
+    (0xd6f7f3c9c1d386dc, 0x4d93b398df86d7d3), (0x9f21320551ce6cb1, 0x9bc7aa94157ba774),
+    (0x4451e5e2b14be0c8, 0xe4fa38d91595dd9c), (0xaa310e2211ac2987, 0x629da0cef68bf841),
+    (0xbec48182475af4f7, 0xc970de404c4e19f1), (0xe37205cc697f064f, 0xe1107503e73480bd),
+    (0x63bf957baadfb672, 0xbe9c9f519b0e6383), (0xd152889c7bfb9353, 0x5d8afb80660f77a9),
+    (0x77fefd8a3b28ba11, 0xb6d42818af1dbb94), (0x6221237cbe249748, 0x6543608fc54b6051),
+    (0x0a8c4c4709f3542e, 0x74a6174582d94f2a), (0x505ee6cf0744ec1d, 0xbe5282998a388afe),
+    (0x1e427b7bbc461d11, 0x10091103976ddf5c), (0xf26feb4fe7647663, 0x2cce2b9ad93d68b2),
+    (0x5e073fcfe3916c07, 0x88ced48a72f71d5b), (0x731aa3b57a5b6349, 0x208d1b5fa61d15ed),
+    (0x3931e14561b3690c, 0x061ba7c5d66e578f), (0xbdb432653eebc9c4, 0x930740d946db14fa),
+    (0x75f3c2af253e5ad0, 0xbfc51a08f1a660d6), (0x10720001784457b8, 0x57ff3307cdba7f68),
+    (0xdf9452de000032b4, 0x23e32f0a9c669d75), (0x672bccbf9ccf2ab0, 0x33c8f85435d033c8),
+    (0x2f570064ff9dc8ed, 0x4ce32fd560dad976), (0x84d193529a64c854, 0x2fd745992803d12a),
+    (0x3672785318dca571, 0xff3266da49a21f5d), (0xaf0c35d721162713, 0xbf5b8b021036e27c),
+    (0x08c1392b7af6496f, 0xda5a201741d5c36e), (0x98a21d3f307095aa, 0xe0b61d0b987b12f3),
+    (0x9d25421cf65aad1f, 0xc1e69a8b695f1df7), (0x8199cb3e8004fc7c, 0xdad333d13e0bc8a8),
+    (0x4c65e2562cd3ad5f, 0xc595bc136a0534c1), (0xa33acddd7754abf8, 0xfa704a54a7a15041),
+    (0xd529aa0c85c88cfa, 0x7014a08e8a1b0ea8), (0xf0138c5ae8a08e14, 0x4659fa0075f97d49),
+    (0x4241c438560d826d, 0x41ee0fd21c3f4dbd), (0x7cf21328cdd45acc, 0xec13e94527db2ab2),
+    (0xfec5868c995d1dc5, 0xd7fb5fd90e3d828f), (0x1cc73bdaa014273d, 0xd4b6d7cedeabfdc3),
+    (0x0f918335dc7a9108, 0x7964dcdbc2df27b6), (0xeb8d9c0b5e58b43e, 0xf781cb19334ac481),
+    (0xbcba667433c5935f, 0x752030503c799d07), (0xee92ddf1b1913509, 0x6f7111198a38348b),
+    (0x62bd81e367472e62, 0xaeec40473c3ca6ea), (0x8e76129d8fa0d427, 0x758d5985040ee07c),
+    (0xc0beebd155863206, 0xe89e9cd2b62a58ca), (0x24c6e007c9ee53f6, 0xb177b2c19eaaa710),
+    (0xf3ee607d0b30b4f1, 0xff1b35458ebb0967), (0x626d5b07d087ceed, 0x4e18834cef7f1747),
+    (0xed0af7fdac99cd2e, 0x8a710f4796e90934), (0xb0455499f41be780, 0x8cf21cd050486ffa),
+    (0x9a776671b8c381b0, 0x18f5250e6ca41156), (0x2c2898c998f63ca1, 0x5f4db84328319589),
+    (0xce5163b9c55e9fbf, 0xd710ef158fa4f27d), (0x9e18c745bfaa92ac, 0x3265e0d6511215d4),
+    (0x3fbdaabc3ef67831, 0x8d353a129f655737), (0x4fd1e181ff3c6c2b, 0xdb2acb384355c5fb),
 )
 
 if __name__ == "__main__":
@@ -253,15 +254,47 @@ if __name__ == "__main__":
 
     from random import getrandbits
 
-    rng = Xoroshiro128Plus(0)
-    n = 10_000
+    def test_xoroshiro_recover_seeds(n: int = 10_000):
+        rng = Xoroshiro128Plus(0)
 
-    for _ in range(n):
-        seed = getrandbits(64)
+        for _ in range(n):
+            seed = getrandbits(64)
 
-        rng.reseed(seed)
-        ec = rng.next_u32()
-        rng.next_state() # fake ids
-        pid = rng.next_u32()
+            rng.reseed(seed)
+            out0 = rng.next_u32()
+            out1 = rng.next_u32()
 
-        assert seed in xoroshiro_recover_seeds_with_skip(ec, pid), f"{seed = :016X}, {ec = :08X}, {pid = :08X}"
+            assert seed in xoroshiro_recover_seeds(out0, out1), f"{seed = :016X}, {out0 = :08X}, {out0 = :08X}"
+
+    def test_xoroshiro_recover_seeds_with_skip(n: int = 10_000):
+        rng = Xoroshiro128Plus(0)
+
+        for _ in range(n):
+            seed = getrandbits(64)
+
+            rng.reseed(seed)
+            ec = rng.next_u32()
+            rng.next_state() # fake ids
+            pid = rng.next_u32()
+
+            assert seed in xoroshiro_recover_seeds_with_skip(ec, pid), f"{seed = :016X}, {ec = :08X}, {pid = :08X}"
+
+    def test_xoroshiro_recover_state_from_128_bits(n: int = 10_000):
+        rng = Xoroshiro128Plus(0)
+        bits = [0] * 128
+
+        for _ in range(n):
+            rng.reseed(getrandbits(64))
+            rng.jump(getrandbits(16))
+            for i in range(128): bits[i] = rng.next_u64() & 1
+            state = rng.state
+
+            state_ = xoroshiro_recover_state_from_128_bits(bits)
+            assert state == state_, f"{state = }, {state_ = }"
+
+    
+    #test_xoroshiro_recover_seeds()
+
+    #test_xoroshiro_recover_seeds_with_skip()
+
+    #test_xoroshiro_recover_state_from_128_bits()

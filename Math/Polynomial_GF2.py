@@ -1,6 +1,6 @@
 # Polynomials over GF(2) can be encoded as positive integers where each bit is a coefficient.
 # For example: x^3 + x^2 + 1 can be represented as 0b1101 = 13.
-# Then, we can implement operations on them using bitwise operators.
+# Then we can implement operations on them using bitwise operators.
 
 def poly_deg_gf2(p: int) -> int:
     """Returns the degree of p(x)."""
