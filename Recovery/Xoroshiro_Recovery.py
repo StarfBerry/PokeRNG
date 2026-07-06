@@ -174,13 +174,13 @@ def xoroshiro_recover_state_from_128_bits(bits: Sequence[int]) -> tuple[int, int
     s0 = s1 = 0
     for i in range(128):
         if bits[i] == 1:
-            s0 ^= XOROSHIRO_128_LSB_INV_THEN_ADVC_128[i][0]
-            s1 ^= XOROSHIRO_128_LSB_INV_THEN_ADVC_128[i][1]
+            s0 ^= XOROSHIRO_128_LSB_INV_X_ADVC_128[i][0]
+            s1 ^= XOROSHIRO_128_LSB_INV_X_ADVC_128[i][1]
     
     return (s0, s1)
 
 # XOROSHIRO^128 * XOROSHIRO_128_LSB_INV
-XOROSHIRO_128_LSB_INV_THEN_ADVC_128 = (
+XOROSHIRO_128_LSB_INV_X_ADVC_128 = (
     (0xbc3a7223e4917777, 0x7e20dc0c3a48212e), (0x8071979ce140db91, 0xe1a3d69592b1dd71),
     (0xf9c525a20f967a70, 0x5550ab49809b64c4), (0x66ff2a6ee7dc2ea8, 0x2afbf148c576abf2),
     (0x01f122958b0e66a9, 0x47da97ca1a59b923), (0x8eb2179ceaf56245, 0xde60da55f0cbb6fb),

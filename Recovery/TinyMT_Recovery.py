@@ -74,10 +74,10 @@ def tinymt_recover_state_from_127_bits(bits: Sequence[int]) -> tuple[int, int, i
     s0 = s1 = s2 = s3 = 0
     for i in range(127):
         if bits[i] == 1:
-            s0 ^= TINYMT_127_LSB_INV_THEN_ADVC_124[i][0]
-            s1 ^= TINYMT_127_LSB_INV_THEN_ADVC_124[i][1]
-            s2 ^= TINYMT_127_LSB_INV_THEN_ADVC_124[i][2]
-            s3 ^= TINYMT_127_LSB_INV_THEN_ADVC_124[i][3]
+            s0 ^= TINYMT_127_LSB_INV_X_ADVC_124[i][0]
+            s1 ^= TINYMT_127_LSB_INV_X_ADVC_124[i][1]
+            s2 ^= TINYMT_127_LSB_INV_X_ADVC_124[i][2]
+            s3 ^= TINYMT_127_LSB_INV_X_ADVC_124[i][3]
 
     # This is not necessary to predict the futur outputs, but at least we compute a state that can be generated from the recurrence relation.
     if tinymt_equation(s0, s1, s2, s3) != 0:
@@ -86,7 +86,7 @@ def tinymt_recover_state_from_127_bits(bits: Sequence[int]) -> tuple[int, int, i
     return (s0, s1, s2, s3)
 
 # TINYMT^124 * TINYMT_127_LSB_INV
-TINYMT_127_LSB_INV_THEN_ADVC_124 = (
+TINYMT_127_LSB_INV_X_ADVC_124 = (
     (0x5bad2a66, 0x680d9666, 0x78978f33, 0x48fc5d16), (0x10acdb77, 0x33a0bc00, 0x109a1955, 0xc916aed0),
     (0x65135044, 0x90acdb77, 0x33a0bc00, 0xfddaa506), (0x42ac1733, 0xe5135044, 0x90acdb77, 0xc74bfe04),
     (0x328cfe5a, 0x42ac1733, 0xe5135044, 0x5015d9a2), (0x61f3a155, 0xb28cfe5a, 0x42ac1733, 0xbc400144),
