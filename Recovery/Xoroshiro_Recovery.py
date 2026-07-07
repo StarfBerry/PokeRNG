@@ -244,7 +244,7 @@ XOROSHIRO_128_LSB_INV_X_ADVC_128 = (
     (0xed0af7fdac99cd2e, 0x8a710f4796e90934), (0xb0455499f41be780, 0x8cf21cd050486ffa),
     (0x9a776671b8c381b0, 0x18f5250e6ca41156), (0x2c2898c998f63ca1, 0x5f4db84328319589),
     (0xce5163b9c55e9fbf, 0xd710ef158fa4f27d), (0x9e18c745bfaa92ac, 0x3265e0d6511215d4),
-    (0x3fbdaabc3ef67831, 0x8d353a129f655737), (0x4fd1e181ff3c6c2b, 0xdb2acb384355c5fb),
+    (0x3fbdaabc3ef67831, 0x8d353a129f655737), (0x4fd1e181ff3c6c2b, 0xdb2acb384355c5fb)
 )
 
 if __name__ == "__main__":

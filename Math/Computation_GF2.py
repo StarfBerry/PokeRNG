@@ -94,17 +94,14 @@ def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int, bits_slice: S
         hex_size = [(b + 3) >> 2 for b in bits_slice]
         mask = [(1 << b) - 1 for b in bits_slice]
         shift = [sh := 0] + [sh := sh + b for b in bits_slice[:-1]]
-        fmt = lambda a: "({}),".format(", ".join(f"0x{(a >> s) & m:0{h}x}" for s, m, h in zip(shift, mask, hex_size)))
+        fmt = lambda a: "({})".format(", ".join(f"0x{(a >> s) & m:0{h}x}" for s, m, h in zip(shift, mask, hex_size)))
     else:
         hex_size = (axis_length + 3) >> 2
-        fmt = lambda a: f"0x{a:0{hex_size}x},"
+        fmt = lambda a: f"0x{a:0{hex_size}x}"
 
     for i in range(axis_length):
         a = bit_vector_to_int(get_axis(i))
-        print(fmt(a), end = " " if (i + 1) % per_line else "\n")
-    
-    if axis_length % per_line:
-        print()
+        print(fmt(a), end = "\n" if i == axis_length - 1 else ", " if (i + 1) % per_line else ",\n")
 
 def print_jump_table_in_hex(apoly: int, size: int, per_line: int, bits_slice: Sequence[int] = None):
     if bits_slice:
@@ -112,17 +109,14 @@ def print_jump_table_in_hex(apoly: int, size: int, per_line: int, bits_slice: Se
         hex_size = [(b + 3) >> 2 for b in bits_slice]
         mask = [(1 << b) - 1 for b in bits_slice]
         shift = [sh := 0] + [sh := sh + b for b in bits_slice[:-1]]
-        fmt = lambda p: "({}),".format(", ".join(f"0x{(p >> s) & m:0{h}x}" for s, m, h in zip(shift, mask, hex_size)))
+        fmt = lambda p: "({})".format(", ".join(f"0x{(p >> s) & m:0{h}x}" for s, m, h in zip(shift, mask, hex_size)))
     else:
         hex_size = (apoly.bit_length() - 1 + 3) >> 2
-        fmt = lambda p: f"0x{p:0{hex_size}x},"
+        fmt = lambda p: f"0x{p:0{hex_size}x}"
 
     for i in range(size):
         p = poly_pow_mod_gf2(2, 1 << i, apoly)
-        print(fmt(p), end = " " if (i + 1) % per_line else "\n")
-    
-    if size % per_line:
-        print()
+        print(fmt(p), end = "\n" if i == size - 1 else ", " if (i + 1) % per_line else ",\n")
 
 if __name__ == "__main__":
     '''
