@@ -396,7 +396,7 @@ As we can see, only 'first' and 'third' are used to generate the IVs.
 Furthermore, LCRNG^2 and MRNG^2 share the same multiplier, so we can use certain constants that were defined previously.
 '''
 
-RANCH_R_INC   = 0x8C319932 # increment constant
+RANCH_R_INC   = 0x8C319932 # reverse increment constant
 RANCH_R_LOWER = 0x670A0357 # ((-0x5277CA86A92 + 0x7fff_ffff) >> 16) + (27697 << 16)
 RANCH_R_UPPER = 0x670A2A11 # (-0x526D5EE6A92 >> 16) + (27697 << 16)
 

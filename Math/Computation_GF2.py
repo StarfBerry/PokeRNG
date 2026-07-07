@@ -79,7 +79,7 @@ def xorshift128_bdsp_blinks(state128: int, intervals: Sequence[int]) -> int:
         bits |= ((state128 >> 96) & 0xf) << (4 * i) # blink = rand(16) <= 1 <==> state[3] & 0xf <= 1 (0 for double, 1 for single)
     return bits
 
-def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int):
+def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int, bits_slice: Sequence[int] = None):
     if axis == 0:
         # rows
         get_axis = lambda i: mat[i]
@@ -89,21 +89,37 @@ def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int):
         get_axis = lambda i: mat[:, i]
         axis_length = mat.shape[1]
 
-    hex_size = (axis_length + 3) // 4
+    if bits_slice:
+        assert sum(bits_slice) == axis_length
+        hex_size = [(b + 3) >> 2 for b in bits_slice]
+        mask = [(1 << b) - 1 for b in bits_slice]
+        shift = [s := 0] + [s := s + b for b in bits_slice[:-1]]
+        fmt = lambda a: "(" + ", ".join(f"0x{(a >> shift[i]) & mask[i]:0{hex_size[i]}x}" for i in range(len(bits_slice))) + "),"
+    else:
+        hex_size = (axis_length + 3) >> 2
+        fmt = lambda a: f"0x{a:0{hex_size}x},"
 
     for i in range(axis_length):
         a = bit_vector_to_int(get_axis(i))
-        print(f"0x{a:0{hex_size}x},", end = " " if (i + 1) % per_line else "\n")
+        print(fmt(a), end = " " if (i + 1) % per_line else "\n")
     
     if axis_length % per_line:
         print()
 
-def print_jump_table_in_hex(apoly: int, size: int, per_line: int):
-    hex_size = (apoly.bit_length() - 1 + 3) // 4
+def print_jump_table_in_hex(apoly: int, size: int, per_line: int, bits_slice: Sequence[int] = None):
+    if bits_slice:
+        assert sum(bits_slice) == apoly.bit_length() - 1
+        hex_size = [(b + 3) >> 2 for b in bits_slice]
+        mask = [(1 << b) - 1 for b in bits_slice]
+        shift = [s := 0] + [s := s + b for b in bits_slice[:-1]]
+        fmt = lambda p: "(" + ", ".join(f"0x{(p >> shift[i]) & mask[i]:0{hex_size[i]}x}" for i in range(len(bits_slice))) + "),"
+    else:
+        hex_size = (apoly.bit_length() - 1 + 3) >> 2
+        fmt = lambda p: f"0x{p:0{hex_size}x},"
 
     for i in range(size):
         poly = poly_pow_mod_gf2(2, 1 << i, apoly)
-        print(f"0x{poly:0{hex_size}x},", end = " " if (i + 1) % per_line else "\n")
+        print(fmt(poly), end = " " if (i + 1) % per_line else "\n")
     
     if size % per_line:
         print()
@@ -129,17 +145,17 @@ if __name__ == "__main__":
     print(hex(charpoly)) # 0x1000000010046d8b3f985d65ffd3c8001
     '''
     
-    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486, 127, 4)
+    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486, 127, 3)
 
     # The characteristic polynomial of the TinyMT can be factored by the monomial x to obtain an annihilating polynomial of lower degree.
-    # However, if we call the jump function on a state that cannot be generated from the recurrence relation, the most significant bit of state[0] may differ from the one obtained if
-    # we had used the characteristic polynomial.
+    # However, if we call the jump function on a state that cannot be generated from the recurrence relation, the most significant bit of state[0] may differ from the one 
+    # obtained if we had used the characteristic polynomial.
     # This has no impact on the outputs, since the next state function is called just before they are calculated.
-    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486 >> 1, 127, 4)
+    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486 >> 1, 127, 3)
 
-    #print_jump_table_in_hex(0x10008828e513b43d5095b8f76579aa001, 128, 4)
+    #print_jump_table_in_hex(0x10008828e513b43d5095b8f76579aa001, 128, 3)
 
-    #print_jump_table_in_hex(0x1000000010046d8b3f985d65ffd3c8001, 128, 4)
+    #print_jump_table_in_hex(0x1000000010046d8b3f985d65ffd3c8001, 128, 3)
 
     '''B = function_to_matrix_gf2(tinymt_127_bits_sequence, 127, 128)
     B = np.delete(B, 31, 1) # delete the 31st column to make the matrix invertible
@@ -148,9 +164,9 @@ if __name__ == "__main__":
     A = np.delete(A, 31, 0)
     A = np.delete(A, 31, 1)
     P = (A @ matrix_inverse_gf2(B)) & 1
-    print_bit_matrix_in_hex(P, 1, 4)'''
+    print_bit_matrix_in_hex(P, 1, 2, [31, 32, 32, 32])'''
 
-    '''B = function_to_matrix_gf2(xoroshiro128plus_128_bits_sequence, 128, 128)
-    A = function_to_matrix_gf2(xoroshiro128plus_next, 128, 128)
-    P = (matrix_pow_gf2(A, 128) @ matrix_inverse_gf2(B)) & 1
-    print_bit_matrix_in_hex(P, 1, 4)'''
+    B = function_to_matrix_gf2(xoroshiro128plus_128_bits_sequence, 128, 128)
+    N = function_to_matrix_gf2(xoroshiro128plus_next, 128, 128)
+    P = (matrix_pow_gf2(N, 128) @ matrix_inverse_gf2(B)) & 1
+    print_bit_matrix_in_hex(P, 1, 2, [64, 64])
