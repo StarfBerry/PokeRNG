@@ -115,9 +115,12 @@ class TinyMT:
         t ^= self.s3
         
         return t
+    
+    def next_u16(self) -> int:
+        return self.next_u32() >> 16
 
     def rand(self, maximum: int) -> int:
-        return (self.next_u32() * maximum) >> 32
+        return self.next_u32() % maximum
 
     def advance(self, n: int):
         for _ in range(n): 
