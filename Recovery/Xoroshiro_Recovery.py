@@ -4,7 +4,7 @@ XOROSHIRO_CONST = 0x82A2B175229D6A5B
 
 def xoroshiro_recover_seeds(first: int, second: int) -> Iterator[int]:
     """
-    Recovers the 64-bit seeds of a Xoroshiro128+ instance from two consecutive 32-bit outputs.
+    Recovers the 64-bit seeds of Xoroshiro128+ from two consecutive 32-bit outputs.
 
     The algorithm solves equations by brute-forcing 6 bits of the seeds and 1 carry bit. 
     """
@@ -51,7 +51,7 @@ def xoroshiro_recover_seeds(first: int, second: int) -> Iterator[int]:
 
 def xoroshiro_recover_seeds_with_skip(first: int, third: int) -> Iterator[int]:
     """
-    Recovers the 64-bit seeds of a Xoroshiro128+ instance from two 32-bit outputs with a skip in between.
+    Recovers the 64-bit seeds of Xoroshiro128+ from two 32-bit outputs with a skip in between.
 
     The algorithm solves equations by brute-forcing 8 bits of the seeds and 2 carry bits.   
     """
@@ -166,7 +166,7 @@ def xoroshiro_recover_seeds_with_skip(first: int, third: int) -> Iterator[int]:
                 if test == third:
                     yield seed
 
-def xoroshiro_recover_state_from_128_bits(bits: Sequence[int]) -> tuple[int, int]:
+def xoroshiro_recover_state_from_128_lsb_sequence(bits: Sequence[int]) -> tuple[int, int]:
     """Recovers the internal state of a Xoroshiro128+ instance thanks to the least significant bit of 128 consecutive outputs."""
     if len(bits) != 128:
         raise ValueError("128 bits are needed to run the algorithm.")
@@ -279,7 +279,7 @@ if __name__ == "__main__":
 
             assert seed in xoroshiro_recover_seeds_with_skip(ec, pid), f"{seed = :016X}, {ec = :08X}, {pid = :08X}"
 
-    def test_xoroshiro_recover_state_from_128_bits(n: int = 10_000):
+    def test_xoroshiro_recover_state_from_128_lsb_sequence(n: int = 10_000):
         rng = Xoroshiro128Plus(0)
         bits = [0] * 128
 
@@ -293,7 +293,7 @@ if __name__ == "__main__":
             
             state = rng.state
 
-            state_ = xoroshiro_recover_state_from_128_bits(bits)
+            state_ = xoroshiro_recover_state_from_128_lsb_sequence(bits)
             assert state == state_, f"{state = }, {state_ = }"
 
     
@@ -301,4 +301,4 @@ if __name__ == "__main__":
 
     #test_xoroshiro_recover_seeds_with_skip()
 
-    #test_xoroshiro_recover_state_from_128_bits()
+    #test_xoroshiro_recover_state_from_128_lsb_sequence()

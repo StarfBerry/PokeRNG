@@ -72,10 +72,10 @@ def mt_recover_seed_from_2_outputs(out0: int, out227: int, ofs: int = 0) -> int 
 
     x = curr_s0 ^ curr_s227
 
-    if prev_s228_lsb := (x >> 31):
+    if prev_s228_lsb := x >> 31:
         x ^= 0x9908B0DF
 
-    if prev_s227_msb := ((x >> 30) & 1): 
+    if prev_s227_msb := (x >> 30) & 1: 
         x ^= 0x40000000
     
     prev_s228 = (x << 1) | prev_s228_lsb

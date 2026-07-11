@@ -50,7 +50,7 @@ def xorshift128_next(state128: int) -> int:
 
     return (s3 << 96) | (s2 << 64) | (s1 << 32) | s0
 
-def tinymt_127_bits_sequence(state128: int) -> int:
+def tinymt_127_lsb_sequence(state128: int) -> int:
     bits = 0
     for i in range(127):
         state128 = tinymt_next(state128)
@@ -58,7 +58,7 @@ def tinymt_127_bits_sequence(state128: int) -> int:
         bits |= b << i
     return bits
 
-def xoroshiro128plus_128_bits_sequence(state128: int) -> int:
+def xoroshiro128plus_128_lsb_sequence(state128: int) -> int:
     bits = 0
     for i in range(128):
         b = (state128 ^ (state128 >> 64)) & 1 # <==> (s0 + s1) & 1
@@ -90,7 +90,7 @@ def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int, bits_slice: S
         axis_length = mat.shape[1]
 
     if bits_slice:
-        assert sum(bits_slice) == axis_length
+        assert sum(bits_slice) == mat.shape[(axis & 1) ^ 1]
         hex_size = [(b + 3) >> 2 for b in bits_slice]
         mask = [(1 << b) - 1 for b in bits_slice]
         shift = [sh := 0] + [sh := sh + b for b in bits_slice[:-1]]
@@ -152,17 +152,16 @@ if __name__ == "__main__":
     #print_jump_table_in_hex(0x1000000010046d8b3f985d65ffd3c8001, 128, 3)
 
     '''
-    B = function_to_matrix_gf2(tinymt_127_bits_sequence, 127, 128)
+    B = function_to_matrix_gf2(tinymt_127_lsb_sequence, 127, 128)
     B = np.delete(B, 31, 1) # delete the 31st column to make the matrix invertible
-    N = function_to_matrix_gf2(tinymt_next, 128, 128)
+    N = function_to_matrix_gf2(tinymt_next, 128, 128) 
     A = matrix_pow_gf2(N, 124)
-    A = np.delete(A, 31, 0)
-    A = np.delete(A, 31, 1)
+    A = np.delete(A, 31, 1) # delete the 31st column to make the product between A and B^-1 possible
     P = (A @ matrix_inverse_gf2(B)) & 1
-    print_bit_matrix_in_hex(P, 1, 2, [31, 32, 32, 32])
+    print_bit_matrix_in_hex(P, 1, 2, [32, 32, 32, 32])
     '''
 
-    B = function_to_matrix_gf2(xoroshiro128plus_128_bits_sequence, 128, 128)
+    B = function_to_matrix_gf2(xoroshiro128plus_128_lsb_sequence, 128, 128)
     N = function_to_matrix_gf2(xoroshiro128plus_next, 128, 128)
     P = (matrix_pow_gf2(N, 128) @ matrix_inverse_gf2(B)) & 1
     print_bit_matrix_in_hex(P, 1, 2, [64, 64])
