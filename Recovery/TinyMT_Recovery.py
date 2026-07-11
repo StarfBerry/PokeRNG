@@ -182,13 +182,13 @@ if __name__ == "__main__":
             
             # https://github.com/wwwwwwzx/3DSRNGTool/blob/022e7352fd6096a6cb92d1c3d22877915563fe42/3DSRNGTool/Gen7/Egg7.cs#L22-L30
             for i in range(127): 
-                # accept egg
+                # save, then accept the egg to hatch it
                 rng.twist() # gender
                 rng.twist() # nature
                 bits[i] = rng.next_u32() & 1 # parent nature if both of them are holding the everstone (0 for male, 1 for female)
-                rng.reverse(3) # soft reset without saving after the egg has hatched
+                rng.reverse(3) # soft reset
                 if i != 126:
-                    rng.twist() # discard egg and save (except for the last egg)
+                    rng.twist() # discard the egg (not necessary for the last one)
             
             state = rng.state
 
