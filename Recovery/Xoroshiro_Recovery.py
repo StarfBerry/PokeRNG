@@ -283,10 +283,11 @@ if __name__ == "__main__":
         rng = Xoroshiro128Plus(0)
         bits = [0] * 128
 
-        # https://billo-guides.github.io/retail/swsh/overworld/seed-finding-and-monitoring#seedfinder-overview
         for _ in range(n):
             rng.reseed(getrandbits(64))
             rng.jump(getrandbits(16))
+            
+            # https://billo-guides.github.io/retail/swsh/overworld/seed-finding-and-monitoring#seedfinder-overview
             for i in range(128): 
                 bits[i] = rng.next_u64() & 1 # attack animation from the summary of a Pokémon (0 for physical, 1 for special)
             
