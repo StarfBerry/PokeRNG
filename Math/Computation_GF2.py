@@ -1,6 +1,6 @@
 from typing import Sequence
 from Matrix_GF2 import *
-from Polynomial_GF2 import *
+from Polynomial_GF2 import poly_pow_mod_gf2
 
 def rotl(n: int, k: int) -> int:
     return ((n << k) | (n >> (64 - k))) & 0xffffffffffffffff
@@ -142,9 +142,6 @@ if __name__ == "__main__":
     #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486, 127, 3)
 
     # The characteristic polynomial of the TinyMT can be factored by the monomial x to obtain an annihilating polynomial of lower degree.
-    # However, if we call the jump function on a state that cannot be generated from the recurrence relation, the most significant bit of state[0] may differ from the one 
-    # obtained if we had used the characteristic polynomial.
-    # This has no impact on the outputs, since the next state function is called just before they are calculated.
     #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486 >> 1, 127, 3)
 
     #print_jump_table_in_hex(0x10008828e513b43d5095b8f76579aa001, 128, 3)
@@ -154,7 +151,7 @@ if __name__ == "__main__":
     '''
     B = function_to_matrix_gf2(tinymt_127_lsb_sequence, 127, 128)
     B = np.delete(B, 31, 1) # delete the 31st column to make the matrix invertible
-    N = function_to_matrix_gf2(tinymt_next, 128, 128) 
+    N = function_to_matrix_gf2(tinymt_next, 128, 128)
     A = matrix_pow_gf2(N, 124)
     A = np.delete(A, 31, 1) # delete the 31st column to make the product between A and B^-1 possible
     P = (A @ matrix_inverse_gf2(B)) & 1

@@ -1,14 +1,14 @@
 import numpy as np
 from typing import Callable
 from itertools import chain
-from Polynomial_GF2 import poly_mul_gf2_bis, poly_divmod_gf2
+from Polynomial_GF2 import poly_divmod_gf2, poly_mul_skip_gf2
 
 type Vector = np.ndarray[tuple[int], np.uint8]      # 1DArray
 type Matrix = np.ndarray[tuple[int, int], np.uint8] # 2DArray
 
-def int_to_bit_vector(x: int, coords: int) -> Vector:
+def int_to_bit_vector(n: int, coords: int) -> Vector:
     """Converts an integer into a vector over GF(2) with a specified number of coordinates."""
-    return np.array([(x >> i) & 1 for i in range(coords)], np.uint8)
+    return np.array([(n >> i) & 1 for i in range(coords)], np.uint8)
 
 def bit_vector_to_int(vec: Vector) -> int:
     """Converts a GF(2) vector into an integer."""
@@ -163,7 +163,7 @@ def matrix_charpoly_gf2(mat: Matrix) -> int:
             while P[i][x] and P[i][y]:
                 q, P[i][x] = poly_divmod_gf2(P[i][x], P[i][y])
                 for k in range(i + 1, n):
-                    P[k][x] ^= poly_mul_gf2_bis(P[k][y], q) & mask
+                    P[k][x] ^= poly_mul_skip_gf2(P[k][y], q) & mask
                 x, y = y, x
             
             if P[i][pivot] == 0:
@@ -174,6 +174,6 @@ def matrix_charpoly_gf2(mat: Matrix) -> int:
             for j in range(i, n):
                 P[j][i], P[j][pivot] = P[j][pivot], P[j][i]
                 
-        charpoly = poly_mul_gf2_bis(charpoly, P[i][i]) & mask
+        charpoly = poly_mul_skip_gf2(charpoly, P[i][i]) & mask
 
     return charpoly
