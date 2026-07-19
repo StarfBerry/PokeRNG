@@ -133,7 +133,7 @@ def poly_lcm_gf2(f: int, g: int) -> int:
     return poly_mul_gf2(f, div)
 
 def poly_egcd_gf2(f: int, g: int) -> tuple[int, int, int]:
-    """Calculates a, b and d such that af + bg = d = gcd(f, g) using the extended Euclidean algorithm."""
+    """Calculates a(x), b(x) and d(x) such that af(x) + bg(x) = d(x) = gcd(f(x), g(x)) using the extended Euclidean algorithm."""
     if g == 0:
         return (int(f != 0), 0, f)
     
@@ -149,7 +149,7 @@ def poly_egcd_gf2(f: int, g: int) -> tuple[int, int, int]:
 
     return (prev_a, prev_b, prev_d)
 
-def poly_inverse_mod_gf2(f: int, g: int) -> int:
+def poly_mod_inv_gf2(f: int, g: int) -> int:
     """Calculates the modular multiplicative inverse of f(x) modulo g(x)."""
     inv, _, gcd = poly_egcd_gf2(f, g)
     assert gcd == 1, "f(x) and g(x) must be relatively prime over GF(2)."
@@ -160,19 +160,16 @@ def distinct_primes(n: int) -> Iterator[int]:
     if n <= 1:
         return
     
-    if n & 1 == 0:
-        yield 2
-        while n & 1 == 0: 
-            n >>= 1
-   
-    if n % 3 == 0:
-        yield 3
-        while n % 3 == 0: 
-            n //= 3
+    for p in (2, 3, 5):
+        if n % p == 0:
+            yield p
+            while n % p == 0:
+                n //= p
     
-    p = 5
-    i = 2
+    p = 7
     s = isqrt(n)
+    i = 1
+    gap = (6, 4, 2, 4, 2, 4, 6, 2) # gaps between prime numbers modulo 30 
 
     while p <= s:
         if n % p == 0:
@@ -181,8 +178,8 @@ def distinct_primes(n: int) -> Iterator[int]:
                 n //= p
             s = isqrt(n)
         
-        p += i 
-        i ^= 6 # alternates between p += 2 and p += 4 to iterate only over integers congruent to 1 or 5 modulo 6 
+        p += gap[i & 7] 
+        i += 1
 
     if n != 1:
         yield n
