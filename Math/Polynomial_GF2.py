@@ -169,7 +169,7 @@ def distinct_primes(n: int) -> Iterator[int]:
     p = 7
     s = isqrt(n)
     i = 1
-    gap = (6, 4, 2, 4, 2, 4, 6, 2) # gaps between prime numbers modulo 30 
+    gap = (6, 4, 2, 4, 2, 4, 6, 2) # gaps between prime numbers greater than 5 modulo 30 
 
     while p <= s:
         if n % p == 0:
