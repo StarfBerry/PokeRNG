@@ -42,6 +42,8 @@ from typing import Iterator
 # allow division rounded up to the nearest integer.
 # If the determinant of the Lagrange-reduced matrix is negative, the constants displayed by the script must be swaped and multiplied by -1.
 
+# The bitmasks '& 0xffff' in the 'tmp' variables can be ignored, they are used only to simulate 32-bit calculations in Python.
+
 #################################################################################################################################################################
 
 '''
@@ -69,7 +71,6 @@ MULT  = 0x41C64E6D # multiplier constant
 INC   = 0x6073     # increment constant
 LAG0  = 0x6134     # -26579 mod 51463
 LAG1  = 0xC907     # 51463
-# The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
 LOWER = 0x64833CB0 # ((-0xC34F11DB + 0x7fff_ffff) >> 16) + (51463 << 15)
 UPPER = 0x6483CBBC # (0x4BBCEE25 >> 16) + (51463 << 15)
 
@@ -87,17 +88,18 @@ def LCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     if lo != up: 
         return
     
-    # at most 3 iterations (around 2.02 in average)
+    # at most 3 iterations (around 2.02 on average)
     for lbits in range((lo * R_LAG1) % R_LAG0, 0x10000, R_LAG0):
         seed = ((second | lbits) * R_MULT + R_INC) & 0xffffffff
         if (seed & 0xffff0000) == first:
             yield seed
 
-# around 2.70 iterations in average
+# around 2.70 iterations on average
 def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
+    # The 'tmp' variable must be declared as 64-bit to avoid integer overflow during additions with the constants LOWER and UPPER
     tmp = (((MULT * first - second) >> 16) & 0xffff) * LAG1
     lo = ((tmp + LOWER) >> 15) * LAG0
     mi = lo + LAG0
@@ -161,13 +163,13 @@ def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
     if lo != up:
         return
 
-    # at most 3 iterations (around 2.37 in average)
+    # at most 3 iterations (around 2.37 on average)
     for lbits in range((lo * R_LAG1_PID_2) % R_LAG0_2, 0x10000, R_LAG0_2):
         seed = ((third | lbits) * R_MULT_2 + R_INC_2) & 0xffffffff
         if (seed & 0xffff0000) == first:
             yield seed
 
-# around 3.08 iterations in average
+# around 3.08 iterations on average
 def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first = ((dfs << 10) | (atk << 5) | hp ) << 16
     third = ((spd << 10) | (spa << 5) | spe) << 16
@@ -204,7 +206,6 @@ GC_R_MULT  = 0xB9B33155 # reverse multiplier constant
 GC_R_INC   = 0xA170F641 # reverse increment constant
 GC_R_LAG0  = 0xE8D1     # 59601
 GC_R_LAG1  = 0x5F47     # -35210 mod 59601
-# The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
 GC_R_LOWER = 0x55FF8537 # ((-0x92D27AC8F311 + 0xffff_ffff) >> 16) + (59601 << 16)
 GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 
@@ -222,7 +223,6 @@ GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 # GCRNG IVs Constants (bounding the first variable)
 GC_R_LAG0_IVS  = 0x44C5     # 17605
 GC_R_LAG1_IVS  = 0xE8D1     # 59601
-# The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
 GC_R_LOWER_IVS = 0x1E694392 # (0x1E68C392F311 + 0x7fff_ffff) >> 16
 GC_R_UPPER_IVS = 0x1E69FAC8 # (0x1E69FAC8F311 >> 16)
 
@@ -234,11 +234,12 @@ GC_LAG1  = 0x4E65     # 20069
 GC_LOWER = 0x3ABA42A9 # ((-0x11BD56C405 + 0x7fff_ffff) >> 16) + (30103 << 15)
 GC_UPPER = 0x3ABA7D05 # (-0x1102FAC405 >> 16) + (30103 << 15)
 
-# around 1.34 iterations in average
+# around 1.34 iterations on average
 def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     first = pid & 0xffff0000
     second = (pid & 0xffff) << 16
     
+    # The 'tmp' variable must be declared as 64-bit to avoid integer overflow during additions with the constants LOWER and UPPER
     tmp = (((first - second * GC_R_MULT) >> 16) & 0xffff) * GC_R_LAG0
     lo = (tmp + GC_R_LOWER) >> 16
     up = (tmp + GC_R_UPPER) >> 16
@@ -269,11 +270,12 @@ def channel_recover_pid_seeds(pid: int) -> Iterator[int]:
         if x != sid:
             yield seed
 
-# around 2.63 iterations in average
+# around 2.63 iterations on average
 def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
+    # The 'tmp' variable must be declared as 64-bit to avoid integer overflow during additions with the constants LOWER and UPPER
     tmp = (((GC_R_MULT * second - first) >> 16) & 0xffff) * GC_R_LAG1_IVS
     lo = ((tmp + GC_R_LOWER_IVS) >> 15) * GC_R_LAG0_IVS
     mi = lo + GC_R_LAG0_IVS
@@ -300,7 +302,7 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
                 yield seed
                 yield seed ^ 0x80000000
 
-# around 3.17 iterations in average
+# around 3.17 iterations on average
 def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
@@ -353,12 +355,12 @@ LOTTO_R_MULT  = 0x9638806D # reverse multiplier constant
 LOTTO_R_INC   = 0xC6D9438B # reverse increment constant
 LOTTO_R_LAG0  = 0x4295     # -46423 mod 63468
 LOTTO_R_LAG1  = 0xF7EC     # 63468
-# The following two must be declared to 64 bits in order to prevent integer overflow in the operations where they are used.
 LOTTO_R_LOWER = 0xC0928805 # (0xC09188056124 + 0xffff_ffff) >> 16
 LOTTO_R_UPPER = 0xC092F075 # (0xC092F0756124 >> 16)
 
 # around 1.46 iterations in averages
 def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:    
+    # The 'tmp' variable must be declared as 64-bit to avoid integer overflow during additions with the constants LOWER and UPPER
     tmp = ((LOTTO_R_MULT * n1 - n0) & 0xffff) * LOTTO_R_LAG1
     lo = (tmp + LOTTO_R_LOWER) >> 16 
     up = (tmp + LOTTO_R_UPPER) >> 16
@@ -400,7 +402,7 @@ RANCH_R_INC   = 0x8C319932 # reverse increment constant
 RANCH_R_LOWER = 0x670A0357 # ((-0x5277CA86A92 + 0x7fff_ffff) >> 16) + (27697 << 16)
 RANCH_R_UPPER = 0x670A2A11 # (-0x526D5EE6A92 >> 16) + (27697 << 16)
 
-# around 3.08 iterations in average
+# around 3.08 iterations on average
 def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first = ((spd << 10) | (spa << 5) | spe) << 16
     third = ((dfs << 10) | (atk << 5) | hp ) << 16
@@ -440,7 +442,7 @@ BW_R_LAG1  = 0x990BB129         # -3572620529 mod 3070150413
 BW_R_LOWER = 0x481F49988938ADF4 # ((-0x6EDF7D7576C7520BCE5949A5 + 0xffff_ffff_ffff_ffff) >> 32) + (3070150413 << 32)
 BW_R_UPPER = 0x481F4998B710B5F4 # (-0x6EDF7D7448EF4A0BCE5949A5 >> 32) + (3070150413 << 32)
 
-# around 1.65 iterations in average
+# around 1.65 iterations on average
 def BWRNG_recover_states_from_2x32_bits(out0: int, out1: int) -> Iterator[int]:
     tmp = ((out0 - out1 * BW_R_MULT) & 0xffff_ffff) * BW_R_LAG0
     lo = (tmp + BW_R_LOWER) >> 32
@@ -510,7 +512,7 @@ def channel_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, s
     x5_min = ((f5 + CHANNEL_UPPER[5]) >> 32) * R[5]
     x5_max = ((f5 + CHANNEL_LOWER[5]) >> 32) * R[5]
 
-    # at most 720 iterations in total (around 369 in average, 48 in the best case)
+    # at most 720 iterations in total (around 369 on average, 48 in the best case)
     for x5 in range(x5_min, x5_max + 1, -R[5]):
         for x4 in range(x4_min, x4_max + 1, R[4]):
             l4 = x5 + x4
