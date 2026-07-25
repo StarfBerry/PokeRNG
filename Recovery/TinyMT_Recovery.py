@@ -48,19 +48,19 @@ def tinymt_reversed_init_loop(s0: int, s1: int, s2: int, s3: int) -> tuple[int, 
     return (s0, s1, s2, s3)
 
 def tinymt_recover_seed_from_state(s0: int, s1: int, s2: int, s3: int, max_advc: int = 10_000) -> int | None:
+    """Recovers the initial seed of a TinyMT instance from it's internal state and a specified amount of steps to move backward in the state sequence."""
     for _ in range(8 + max_advc):
-        s3_ = s3 ^ (0x6C078965 * (s2 ^ (s2 >> 30)) + 7) & 0xffffffff
-        s2_ = s2 ^ (0x6C078965 * (s1 ^ (s1 >> 30)) + 6) & 0xffffffff
-        s3_ ^= (0x6C078965 * (s2_ ^ (s2_ >> 30)) + 3) & 0xffffffff
+        t3 = s3 ^ (0x6C078965 * (s2 ^ (s2 >> 30)) + 7) & 0xffffffff
+        t2 = s2 ^ (0x6C078965 * (s1 ^ (s1 >> 30)) + 6) & 0xffffffff
+        t3 = t3 ^ (0x6C078965 * (t2 ^ (t2 >> 30)) + 3) & 0xffffffff
 
-        if s3_ == 0x3793FDFF:
-            s0_, s1_, s2_, _ = tinymt_reversed_init_loop(s0, s1, s2, s3)
-            if s1_ == 0x8F7011EE and s2_ == 0xFC78FF1F:
-                return s0_
-            # s3_ persists in both cases
-            s0_, s1_, s2_, _ = tinymt_reversed_init_loop(s0 ^ 0x80000000, s1, s2, s3)
-            if s1_ == 0x8F7011EE and s2_ == 0xFC78FF1F:
-                return s0_
+        if t3 == 0x3793FDFF:
+            seed, t1, t2, _ = tinymt_reversed_init_loop(s0, s1, s2, s3)
+            if t1 == 0x8F7011EE and t2 == 0xFC78FF1F:
+                return seed
+            seed, t1, t2, _ = tinymt_reversed_init_loop(s0 ^ 0x80000000, s1, s2, s3)
+            if t1 == 0x8F7011EE and t2 == 0xFC78FF1F:
+                return seed
         
         s0, s1, s2, s3 = tinymt_prev(s0, s1, s2, s3)
     
@@ -72,6 +72,7 @@ def tinymt_recover_state_from_127_lsb_sequence(bits: Sequence[int]) -> tuple[int
         raise ValueError("127 bits are needed to run the algorithm.")
     
     s0 = s1 = s2 = s3 = 0
+    
     for i in range(127):
         if bits[i] == 1:
             s0 ^= TINYMT_127_LSB_INV_X_ADVC_124[i][0]
@@ -156,12 +157,12 @@ if __name__ == "__main__":
 
     from random import getrandbits, randrange
     
-    def test_tinymt_recover_seed_from_state(n: int = 1_000):
+    def test_tinymt_recover_seed_from_state(n: int = 10_000):
         rng = TinyMT(0)
         
         for _ in range(n):
             seed = getrandbits(32)
-            advc = randrange(0, 10_000)
+            advc = randrange(0, 1_000)
 
             rng.reseed(seed)
             rng.jump(advc)

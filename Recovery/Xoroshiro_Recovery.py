@@ -172,6 +172,7 @@ def xoroshiro_recover_state_from_128_lsb_sequence(bits: Sequence[int]) -> tuple[
         raise ValueError("128 bits are needed to run the algorithm.")
     
     s0 = s1 = 0
+    
     for i in range(128):
         if bits[i] == 1:
             s0 ^= XOROSHIRO_128_LSB_INV_X_ADVC_128[i][0]
@@ -264,7 +265,7 @@ if __name__ == "__main__":
             out0 = rng.next_u32()
             out1 = rng.next_u32()
 
-            assert seed in xoroshiro_recover_seeds(out0, out1), f"{seed = :016X}, {out0 = :08X}, {out0 = :08X}"
+            assert seed in xoroshiro_recover_seeds(out0, out1), f"{seed = :016X}, {out0 = :08X}, {out1 = :08X}"
 
     def test_xoroshiro_recover_seeds_with_skip(n: int = 10_000):
         rng = Xoroshiro128Plus(0)
