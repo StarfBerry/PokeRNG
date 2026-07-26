@@ -53,8 +53,8 @@ from typing import Iterator
 '''
 
 # LCRNG PID Constants
-R_MULT  = 0xEEB9EB65 # reverse multiplier constant
-R_INC   = 0xA3561A1  # reverse increment constant
+R_MULT  = 0xEEB9EB65 # reversed multiplier constant
+R_INCR  = 0xA3561A1  # reversed increment constant
 R_LAG0  = 0x7ED7     # 32471
 R_LAG1  = 0x71A4     # -68321 mod 32471
 R_LOWER = 0x79C8BF4A # ((-0x50F40B53C37 + 0xffff_ffff) >> 16) + (32471 << 16)
@@ -68,7 +68,7 @@ R_UPPER = 0x79C8A5F4 # (-0x50E5A0B3C37 >> 16) + (32471 << 16)
 
 # LCRNG IVs Constants
 MULT  = 0x41C64E6D # multiplier constant
-INC   = 0x6073     # increment constant
+INCR  = 0x6073     # increment constant
 LAG0  = 0x6134     # -26579 mod 51463
 LAG1  = 0xC907     # 51463
 LOWER = 0x64833CB0 # ((-0xC34F11DB + 0x7fff_ffff) >> 16) + (51463 << 15)
@@ -90,7 +90,7 @@ def LCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     
     # at most 3 iterations (around 2.02 on average)
     for lbits in range((lo * R_LAG1) % R_LAG0, 0x10000, R_LAG0):
-        seed = ((second | lbits) * R_MULT + R_INC) & 0xffffffff
+        seed = ((second | lbits) * R_MULT + R_INCR) & 0xffffffff
         if (seed & 0xffff0000) == first:
             yield seed
 
@@ -108,13 +108,13 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     # each loop performs at most 2 iterations
     for lbits in range(lo % LAG1, 0x10000, LAG1):
         seed = first | lbits
-        if ((seed * MULT + INC) & 0x7fff0000) == second:
+        if ((seed * MULT + INCR) & 0x7fff0000) == second:
             yield seed
             yield seed ^ 0x80000000
     
     for lbits in range(mi % LAG1, 0x10000, LAG1):
         seed = first | lbits
-        if ((seed * MULT + INC) & 0x7fff0000) == second:
+        if ((seed * MULT + INCR) & 0x7fff0000) == second:
             yield seed
             yield seed ^ 0x80000000
     
@@ -122,7 +122,7 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     if mi != up:
         for lbits in range(up % LAG1, 0x10000, LAG1):
             seed = first | lbits
-            if ((seed * MULT + INC) & 0x7fff0000) == second:
+            if ((seed * MULT + INCR) & 0x7fff0000) == second:
                 yield seed
                 yield seed ^ 0x80000000
 
@@ -140,8 +140,8 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
 '''
 
 # LCRNG^2 PID/IVs Constants
-R_MULT_2  = 0xDC6C95D9 # reverse multiplier constant
-R_INC_2   = 0x4D3CB126 # reverse increment constant
+R_MULT_2  = 0xDC6C95D9 # reversed multiplier constant
+R_INCR_2  = 0x4D3CB126 # reversed increment constant
 R_LAG0_2  = 0x6C31     # 27697
 R_LAG1_PID_2 = 0x5D20  # -59251 mod 27697
 R_LAG1_IVS_2 = 0x2E90  # -43474 mod 27697
@@ -165,7 +165,7 @@ def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
 
     # at most 3 iterations (around 2.37 on average)
     for lbits in range((lo * R_LAG1_PID_2) % R_LAG0_2, 0x10000, R_LAG0_2):
-        seed = ((third | lbits) * R_MULT_2 + R_INC_2) & 0xffffffff
+        seed = ((third | lbits) * R_MULT_2 + R_INCR_2) & 0xffffffff
         if (seed & 0xffff0000) == first:
             yield seed
 
@@ -180,7 +180,7 @@ def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd
 
     # each loop performs at most 3 iterations
     for lbits in range((lo * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
-        seed = ((third | lbits) * R_MULT_2 + R_INC_2) & 0xffffffff
+        seed = ((third | lbits) * R_MULT_2 + R_INCR_2) & 0xffffffff
         if (seed & 0x7fff0000) == first:
             yield seed
             yield seed ^ 0x80000000
@@ -188,7 +188,7 @@ def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd
     # true in around 30% of cases
     if lo != up:
         for lbits in range((up * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
-            seed = ((third | lbits) * R_MULT_2 + R_INC_2) & 0xffffffff
+            seed = ((third | lbits) * R_MULT_2 + R_INCR_2) & 0xffffffff
             if (seed & 0x7fff0000) == first:
                 yield seed
                 yield seed ^ 0x80000000
@@ -202,8 +202,8 @@ def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd
 '''
 
 # GCRNG PID Constants
-GC_R_MULT  = 0xB9B33155 # reverse multiplier constant
-GC_R_INC   = 0xA170F641 # reverse increment constant
+GC_R_MULT  = 0xB9B33155 # reversed multiplier constant
+GC_R_INCR  = 0xA170F641 # reversed increment constant
 GC_R_LAG0  = 0xE8D1     # 59601
 GC_R_LAG1  = 0x5F47     # -35210 mod 59601
 GC_R_LOWER = 0x55FF8537 # ((-0x92D27AC8F311 + 0xffff_ffff) >> 16) + (59601 << 16)
@@ -228,7 +228,7 @@ GC_R_UPPER_IVS = 0x1E69FAC8 # (0x1E69FAC8F311 >> 16)
 
 # GCRNG IVs Constants (bounding the second variable)
 GC_MULT  = 0x343FD    # multiplier constant
-GC_INC   = 0x269EC3   # increment constant
+GC_INCR  = 0x269EC3   # increment constant
 GC_LAG0  = 0x7597     # 30103
 GC_LAG1  = 0x4E65     # 20069
 GC_LOWER = 0x3ABA42A9 # ((-0x11BD56C405 + 0x7fff_ffff) >> 16) + (30103 << 15)
@@ -246,27 +246,27 @@ def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
 
     # each loop performs at most 2 iterations
     for lbits in range((lo * GC_R_LAG1) % GC_R_LAG0, 0x10000, GC_R_LAG0):
-        seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
+        seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
         if (seed & 0xffff0000) == first:
             yield seed
     
     # true in around 22% of cases
     if lo != up:
         for lbits in range((up * GC_R_LAG1) % GC_R_LAG0, 0x10000, GC_R_LAG0):
-            seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
+            seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
             if (seed & 0xffff0000) == first:
                 yield seed
 
 def channel_recover_pid_seeds(pid: int) -> Iterator[int]:
     x = 40122 ^ (pid >> 16) ^ ((pid & 0xffff) < 8) # failed implementation of the shiny lock due to operator precedence
     for seed in GCRNG_recover_pid_seeds(pid): 
-        sid = ((seed * GC_R_MULT + GC_R_INC) >> 16) & 0xffff
+        sid = ((seed * GC_R_MULT + GC_R_INCR) >> 16) & 0xffff
         if x == sid:
             yield seed
     
     x ^= 0x8000
     for seed in GCRNG_recover_pid_seeds(pid ^ 0x80000000): 
-        sid = ((seed * GC_R_MULT + GC_R_INC) >> 16) & 0xffff
+        sid = ((seed * GC_R_MULT + GC_R_INCR) >> 16) & 0xffff
         if x != sid:
             yield seed
 
@@ -283,13 +283,13 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
 
     # each loop performs at most 2 iterations
     for lbits in range(lo % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
-        seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
+        seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
         if (seed & 0x7fff0000) == first:
             yield seed
             yield seed ^ 0x80000000
     
     for lbits in range(mi % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
-        seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
+        seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
         if (seed & 0x7fff0000) == first:
             yield seed
             yield seed ^ 0x80000000
@@ -297,7 +297,7 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     # true in around 43% of cases
     if mi != up:
         for lbits in range(up % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
-            seed = ((second | lbits) * GC_R_MULT + GC_R_INC) & 0xffffffff
+            seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
             if (seed & 0x7fff0000) == first:
                 yield seed
                 yield seed ^ 0x80000000
@@ -314,7 +314,7 @@ def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int,
     # each loop performs at most 3 iterations
     for lbits in range((lo * GC_LAG1) % GC_LAG0, 0x10000, GC_LAG0):
         seed = first | lbits
-        if ((seed * GC_MULT + GC_INC) & 0x7fff0000) == second:
+        if ((seed * GC_MULT + GC_INCR) & 0x7fff0000) == second:
             yield seed
             yield seed ^ 0x80000000
     
@@ -322,7 +322,7 @@ def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int,
     if lo != up:
         for lbits in range((up * GC_LAG1) % GC_LAG0, 0x10000, GC_LAG0):
             seed = first | lbits
-            if ((seed * GC_MULT + GC_INC) & 0x7fff0000) == second:
+            if ((seed * GC_MULT + GC_INCR) & 0x7fff0000) == second:
                 yield seed
                 yield seed ^ 0x80000000
 
@@ -351,8 +351,8 @@ However, it's more advantageous to work with the reversed version of this new LC
 | 0x9638806D  2^32 |              | -46603  28804 |              | 46603  -28804 |
 '''
 
-LOTTO_R_MULT  = 0x9638806D # reverse multiplier constant
-LOTTO_R_INC   = 0xC6D9438B # reverse increment constant
+LOTTO_R_MULT  = 0x9638806D # reversed multiplier constant
+LOTTO_R_INCR  = 0xC6D9438B # reversed increment constant
 LOTTO_R_LAG0  = 0x4295     # -46423 mod 63468
 LOTTO_R_LAG1  = 0xF7EC     # 63468
 LOTTO_R_LOWER = 0xC0928805 # (0xC09188056124 + 0xffff_ffff) >> 16
@@ -369,14 +369,14 @@ def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:
 
     # each loop performs at most 2 iterations
     for lbits in range((lo * LOTTO_R_LAG0) % LOTTO_R_LAG1, 0x10000, LOTTO_R_LAG1):
-        seed = ((n1 | lbits) * LOTTO_R_MULT + LOTTO_R_INC) & 0xffffffff
+        seed = ((n1 | lbits) * LOTTO_R_MULT + LOTTO_R_INCR) & 0xffffffff
         if (seed >> 16) == n0:
             yield (seed * R_MULT + 0xFC77A683) & 0xffffffff
 
     # true in around 41% of cases
     if lo != up:
         for lbits in range((up * LOTTO_R_LAG0) % LOTTO_R_LAG1, 0x10000, LOTTO_R_LAG1):
-            seed = ((n1 | lbits) * LOTTO_R_MULT + LOTTO_R_INC) & 0xffffffff
+            seed = ((n1 | lbits) * LOTTO_R_MULT + LOTTO_R_INCR) & 0xffffffff
             if (seed >> 16) == n0:
                 yield (seed * R_MULT + 0xFC77A683) & 0xffffffff
 
@@ -398,7 +398,7 @@ As we can see, only 'first' and 'third' are used to generate the IVs.
 Furthermore, LCRNG^2 and MRNG^2 share the same multiplier, so we can use certain constants that were defined previously.
 '''
 
-RANCH_R_INC   = 0x8C319932 # reverse increment constant
+RANCH_R_INCR  = 0x8C319932 # reversed increment constant
 RANCH_R_LOWER = 0x670A0357 # ((-0x5277CA86A92 + 0x7fff_ffff) >> 16) + (27697 << 16)
 RANCH_R_UPPER = 0x670A2A11 # (-0x526D5EE6A92 >> 16) + (27697 << 16)
 
@@ -413,7 +413,7 @@ def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
 
     # each loop performs at most 3 iterations
     for lbits in range((lo * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
-        seed = ((third | lbits) * R_MULT_2 + RANCH_R_INC) & 0xffffffff
+        seed = ((third | lbits) * R_MULT_2 + RANCH_R_INCR) & 0xffffffff
         if (seed & 0x7fff0000) == first:
             yield seed
             yield seed ^ 0x80000000
@@ -421,7 +421,7 @@ def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     # true in around 30% of cases
     if lo != up:
         for lbits in range((up * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
-            seed = ((third | lbits) * R_MULT_2 + RANCH_R_INC) & 0xffffffff
+            seed = ((third | lbits) * R_MULT_2 + RANCH_R_INCR) & 0xffffffff
             if (seed & 0x7fff0000) == first:
                 yield seed
                 yield seed ^ 0x80000000
@@ -435,8 +435,8 @@ def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
 '''
 
 # Proof of concept for 64-bit LCGs
-BW_R_MULT  = 0xDEDCEDAE9638806D # reverse multiplier constant
-BW_R_INC   = 0x9B1AE6E9A384E6F9 # reverse increment constant
+BW_R_MULT  = 0xDEDCEDAE9638806D # reversed multiplier constant
+BW_R_INCR  = 0x9B1AE6E9A384E6F9 # reversed increment constant
 BW_R_LAG0  = 0xB6FEC70D         # 3070150413
 BW_R_LAG1  = 0x990BB129         # -3572620529 mod 3070150413
 BW_R_LOWER = 0x481F49988938ADF4 # ((-0x6EDF7D7576C7520BCE5949A5 + 0xffff_ffff_ffff_ffff) >> 32) + (3070150413 << 32)
@@ -452,14 +452,14 @@ def BWRNG_recover_states_from_2x32_bits(out0: int, out1: int) -> Iterator[int]:
 
     # each loop performs at most 2 iterations
     for lbits in range((lo * BW_R_LAG1) % BW_R_LAG0, 0x1_0000_0000, BW_R_LAG0):
-        state = ((out1 | lbits) * BW_R_MULT + BW_R_INC) & 0xffff_ffff_ffff_ffff
+        state = ((out1 | lbits) * BW_R_MULT + BW_R_INCR) & 0xffff_ffff_ffff_ffff
         if (state >> 32) == out0:
             yield state
     
     # true in around 18% of cases
     if lo != up:
         for lbits in range((up * BW_R_LAG1) % BW_R_LAG0, 0x1_0000_0000, BW_R_LAG0):
-            state = ((out1 | lbits) * BW_R_MULT + BW_R_INC) & 0xffff_ffff_ffff_ffff
+            state = ((out1 | lbits) * BW_R_MULT + BW_R_INCR) & 0xffff_ffff_ffff_ffff
             if (state >> 32) == out0:
                 yield state
 
