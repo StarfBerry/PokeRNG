@@ -1,5 +1,6 @@
 from typing import Sequence
 
+# https://github.com/StarfBerry/PokeRNG/blob/f74a5b39de21e7c674eb2260fa8b6817f2bfc189/Math/Computation_GF2.py#L127
 def tinymt_equation(s0: int, s1: int, s2: int, s3: int) -> int:
     """Equation to check if a state can be generated from the recurrence relation of the TinyMT."""
     eq = (s0 >> 31) ^ (s1 >> 31) ^ s2.bit_count() ^ (s3 & 0x3fffff).bit_count()
