@@ -82,7 +82,7 @@ def tinymt_recover_state_from_127_lsb_sequence(bits: Sequence[int]) -> tuple[int
     
     return (s0, s1, s2, s3)
 
-# TINYMT^124 * TINYMT_127_LSB_INV
+# https://github.com/StarfBerry/PokeRNG/blob/f74a5b39de21e7c674eb2260fa8b6817f2bfc189/Math/Computation_GF2.py#L152-L158
 TINYMT_127_LSB_INV_X_ADVC_124 = (
     (0x5bad2a66, 0x680d9666, 0x78978f33, 0x48fc5d16), (0x90acdb77, 0x33a0bc00, 0x109a1955, 0xc916aed0),
     (0xe5135044, 0x90acdb77, 0x33a0bc00, 0xfddaa506), (0x42ac1733, 0xe5135044, 0x90acdb77, 0xc74bfe04),
