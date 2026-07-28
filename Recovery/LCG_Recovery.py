@@ -99,7 +99,7 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
-    # The 'tmp' variable must be declared as 64-bit to avoid integer overflow during additions with the constants LOWER and UPPER
+    # The variable 'tmp' must be declared or converted to 64-bit to avoid integer overflow during addition with the LOWER and UPPER constants
     tmp = (((MULT * first - second) >> 16) & 0xffff) * LAG1
     lo = ((tmp + LOWER) >> 15) * LAG0
     mi = lo + LAG0
@@ -140,11 +140,11 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
 '''
 
 # LCRNG^2 PID/IVs Constants
-R_MULT_2  = 0xDC6C95D9 # reversed multiplier constant
-R_INCR_2  = 0x4D3CB126 # reversed increment constant
-R_LAG0_2  = 0x6C31     # 27697
-R_LAG1_PID_2 = 0x5D20  # -59251 mod 27697
-R_LAG1_IVS_2 = 0x2E90  # -43474 mod 27697
+R_MULT_2 = 0xDC6C95D9 # reversed multiplier constant
+R_INCR_2 = 0x4D3CB126 # reversed increment constant
+R_LAG0_2 = 0x6C31     # 27697
+R_LAG1_PID_2 = 0x5D20 # -59251 mod 27697
+R_LAG1_IVS_2 = 0x2E90 # -43474 mod 27697
 R_LOWER_PID_2 = 0x4B8D621D # ((-0x20A49DE2F046 + 0xffff_ffff) >> 16) + (27697 << 16)
 R_LOWER_IVS_2 = 0x4B8CE21D # ((-0x20A49DE2F046 + 0x7fff_ffff) >> 16) + (27697 << 16)
 R_UPPER_2     = 0x4B8D08D7 # (-0x20A3F728F046 >> 16) + (27697 << 16)
@@ -239,7 +239,7 @@ def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     first = pid & 0xffff0000
     second = (pid & 0xffff) << 16
     
-    # The 'tmp' variable must be declared as 64-bit to avoid integer overflow during additions with the constants LOWER and UPPER
+    # The variable 'tmp' must be declared or converted to 64-bit to avoid integer overflow during addition with the LOWER and UPPER constants
     tmp = (((first - second * GC_R_MULT) >> 16) & 0xffff) * GC_R_LAG0
     lo = (tmp + GC_R_LOWER) >> 16
     up = (tmp + GC_R_UPPER) >> 16
@@ -275,7 +275,7 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
-    # The 'tmp' variable must be declared as 64-bit to avoid integer overflow during additions with the constants LOWER and UPPER
+    # The variable 'tmp' must be declared or converted to 64-bit to avoid integer overflow during addition with the LOWER and UPPER constants
     tmp = (((GC_R_MULT * second - first) >> 16) & 0xffff) * GC_R_LAG1_IVS
     lo = ((tmp + GC_R_LOWER_IVS) >> 15) * GC_R_LAG0_IVS
     mi = lo + GC_R_LAG0_IVS
@@ -360,7 +360,7 @@ LOTTO_R_UPPER = 0xC092F075 # (0xC092F0756124 >> 16)
 
 # around 1.46 iterations in averages
 def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:    
-    # The 'tmp' variable must be declared as 64-bit to avoid integer overflow during additions with the constants LOWER and UPPER
+    # The variable 'tmp' must be declared or converted to 64-bit to avoid integer overflow during addition with the LOWER and UPPER constants
     tmp = ((LOTTO_R_MULT * n1 - n0) & 0xffff) * LOTTO_R_LAG1
     lo = (tmp + LOTTO_R_LOWER) >> 16 
     up = (tmp + LOTTO_R_UPPER) >> 16

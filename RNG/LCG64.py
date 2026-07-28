@@ -1,6 +1,6 @@
 # 64-bit Linear Congruential Generator
 
-def jump_tables_lcg64(mult: int, incr: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
+def lcg64_jump_tables(mult: int, incr: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
     mult_table = [mult]
     incr_table = [incr]
     for _ in range(63):
@@ -21,7 +21,7 @@ def define_lcg64(mult: int, incr: int) -> type:
     incr &= 0xffffffffffffffff
 
     class LCG64:   
-        MULT_TABLE, INCR_TABLE = jump_tables_lcg64(mult, incr)
+        MULT_TABLE, INCR_TABLE = lcg64_jump_tables(mult, incr)
 
         def __init__(self, seed: int):         
             self.state = seed & 0xffffffffffffffff

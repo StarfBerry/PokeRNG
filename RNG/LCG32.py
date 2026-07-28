@@ -1,6 +1,6 @@
 # 32-bit Linear Congruential Generator
 
-def jump_tables_lcg32(mult: int, incr: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
+def lcg32_jump_tables(mult: int, incr: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
     mult_table = [mult]
     incr_table = [incr]
     for _ in range(31):
@@ -21,7 +21,7 @@ def define_lcg32(mult: int, incr: int) -> type:
     incr &= 0xffffffff
 
     class LCG32:
-        MULT_TABLE, INCR_TABLE = jump_tables_lcg32(mult, incr)
+        MULT_TABLE, INCR_TABLE = lcg32_jump_tables(mult, incr)
 
         def __init__(self, seed: int):         
             self.state = seed & 0xffffffff
