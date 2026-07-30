@@ -99,7 +99,7 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
-    # The variable 'tmp' must be declared or converted to 64-bit to avoid integer overflow during addition with the LOWER and UPPER constants
+    # 'tmp' must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
     tmp = (((MULT * first - second) >> 16) & 0xffff) * LAG1
     lo = ((tmp + LOWER) >> 15) * LAG0
     mi = lo + LAG0
@@ -239,7 +239,7 @@ def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     first = pid & 0xffff0000
     second = (pid & 0xffff) << 16
     
-    # The variable 'tmp' must be declared or converted to 64-bit to avoid integer overflow during addition with the LOWER and UPPER constants
+    # 'tmp' must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
     tmp = (((first - second * GC_R_MULT) >> 16) & 0xffff) * GC_R_LAG0
     lo = (tmp + GC_R_LOWER) >> 16
     up = (tmp + GC_R_UPPER) >> 16
@@ -275,7 +275,7 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
     first  = ((dfs << 10) | (atk << 5) | hp ) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
-    # The variable 'tmp' must be declared or converted to 64-bit to avoid integer overflow during addition with the LOWER and UPPER constants
+    # 'tmp' must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
     tmp = (((GC_R_MULT * second - first) >> 16) & 0xffff) * GC_R_LAG1_IVS
     lo = ((tmp + GC_R_LOWER_IVS) >> 15) * GC_R_LAG0_IVS
     mi = lo + GC_R_LAG0_IVS
@@ -360,7 +360,7 @@ LOTTO_R_UPPER = 0xC092F075 # (0xC092F0756124 >> 16)
 
 # around 1.46 iterations in averages
 def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:    
-    # The variable 'tmp' must be declared or converted to 64-bit to avoid integer overflow during addition with the LOWER and UPPER constants
+    # 'tmp' must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
     tmp = ((LOTTO_R_MULT * n1 - n0) & 0xffff) * LOTTO_R_LAG1
     lo = (tmp + LOTTO_R_LOWER) >> 16 
     up = (tmp + LOTTO_R_UPPER) >> 16
@@ -444,6 +444,7 @@ BW_R_UPPER = 0x481F4998B710B5F4 # (-0x6EDF7D7448EF4A0BCE5949A5 >> 32) + (3070150
 
 # around 1.65 iterations on average
 def BWRNG_recover_states_from_2x32_bits(out0: int, out1: int) -> Iterator[int]:
+    # The bitmask '& 0xffff_ffff' is required, otherwise 128-bit variables will be needed
     tmp = ((out0 - out1 * BW_R_MULT) & 0xffff_ffff) * BW_R_LAG0
     lo = (tmp + BW_R_LOWER) >> 32
     up = (tmp + BW_R_UPPER) >> 32
@@ -486,6 +487,9 @@ I = (0x269EC3, 0x1E278E7A, 0xD2F65B55, 0x98520C4, 0xA2974C77)
 # Constants to bound the variables in the linear combinations for calculating potential solutions
 CHANNEL_LOWER = (0x2AB966D1C2, 0x2169A3AA47, -0x5049D5FDC, -0x2AACDA387, 0xFE7FFFFFF, -0x898000001)
 CHANNEL_UPPER = (0x2E8966D1C3, 0x23D9A3AA48, -0x3549D5FDB, -0xDACDA386, 0x1098000000, -0x7E8000000)
+
+# Alternative implementation where all variables involved in the nested loop are 32-bit unsigned integers
+# https://github.com/kwsch/PKHeX/issues/4844#issuecomment-5124474121
 
 def channel_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     f0 = (-10 * hp + 23 * atk - dfs - 15 * spe + 52 * spa - 53 * spd) << 27

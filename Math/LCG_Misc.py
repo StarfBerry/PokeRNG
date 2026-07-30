@@ -16,17 +16,17 @@ def inv_mod_pow_2(n: int, p: int) -> int:
 
     return x % p2
 
-def reverse_lcg_32(mult: int, inc: int) -> tuple[int, int]:
-    """Calculates the multiplier and increment for a 32-bit LCG to move backward in the state sequence."""
+def reverse_lcg32(mult: int, incr: int) -> tuple[int, int]:
+    """Calculates the multiplier and increment of a 32-bit LCG to move backward in the state sequence."""
     rmult = inv_mod_pow_2(mult, 32)
-    rinc = (-inc * rmult) & 0xffffffff
-    return (rmult, rinc)
+    rincr = (-incr * rmult) & 0xffffffff
+    return (rmult, rincr)
 
-def reverse_lcg_64(mult: int, inc: int) -> tuple[int, int]:
-    """Calculates the multiplier and increment for a 64-bit LCG to move backward in the state sequence."""
+def reverse_lcg64(mult: int, incr: int) -> tuple[int, int]:
+    """Calculates the multiplier and increment of a 64-bit LCG to move backward in the state sequence."""
     rmult = inv_mod_pow_2(mult, 64)
-    rinc = (-inc * rmult) & 0xffffffffffffffff
-    return (rmult, rinc)
+    rincr = (-incr * rmult) & 0xffffffffffffffff
+    return (rmult, rincr)
 
 def lagrange_algorithm(u: Sequence[int], v: Sequence[int]) -> tuple[tuple[int, int], tuple[int, int]]:
     """Computes the shortest basis nearly orthogonal of a 2-dimensional integer lattice from a given basis."""
@@ -46,19 +46,19 @@ def lagrange_algorithm(u: Sequence[int], v: Sequence[int]) -> tuple[tuple[int, i
     return (tuple(u), tuple(v))
 
 if __name__ == "__main__":
-    #rmult, rinc = reverse_lcg_32(0x41c64e6d, 0x6073)
+    #rmult, rinc = reverse_lcg32(0x41c64e6d, 0x6073)
     #print(hex(rmult), hex(rinc)) # 0xeeb9eb65 0xa3561a1
 
-    #rmult, rinc = reverse_lcg_32(0x41c64e6d, 0x3039)
+    #rmult, rinc = reverse_lcg32(0x41c64e6d, 0x3039)
     #print(hex(rmult), hex(rinc)) # 0xeeb9eb65 0xfc77a683
 
-    #rmult, rinc = reverse_lcg_32(0x343fd, 0x269ec3)
+    #rmult, rinc = reverse_lcg32(0x343fd, 0x269ec3)
     #print(hex(rmult), hex(rinc)) # 0xb9b33155 0xa170f641
 
-    #rmult, rinc = reverse_lcg_32(0x6c078965, 0x1)
+    #rmult, rinc = reverse_lcg32(0x6c078965, 0x1)
     #print(hex(rmult), hex(rinc)) # 0x9638806d 0x69c77f93
 
-    #rmult, rinc = reverse_lcg_64(0x5d588b656c078965, 0x269ec3)
+    #rmult, rinc = reverse_lcg64(0x5d588b656c078965, 0x269ec3)
     #print(hex(rmult), hex(rinc)) # 0xdedcedae9638806d 0x9b1ae6e9a384e6f9
 
     #print(lagrange_algorithm([1, 0xeeb9eb65], [0, 1 << 32])) # ((32471, 26579), (-68321, 76347))
