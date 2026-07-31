@@ -74,8 +74,7 @@ LAG1  = 0xC907     # 51463
 LOWER = 0x64833CB0 # ((-0xC34F11DB + 0x7fff_ffff) >> 16) + (51463 << 15)
 UPPER = 0x6483CBBC # (0x4BBCEE25 >> 16) + (51463 << 15)
 
-# The range of the second variable is smaller than one.
-# So, in some cases, we can predict that there will be no solutions without having to enter the loop.
+# around 1.82 iterations on average
 def LCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     first = (pid & 0xffff) << 16
     second = pid & 0xffff0000
@@ -84,11 +83,12 @@ def LCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     lo = (tmp + R_LOWER) >> 16
     up = (tmp + R_UPPER) >> 16
 
-    # true in around 10% of cases
+    # The range of the bounded variable is approximately 0.90, which is less than 1.
+    # Therefore, in about 10% of cases, we can predict that there will be no solutions without having to enter the loop.
     if lo != up: 
         return
     
-    # at most 3 iterations (around 2.02 on average)
+    # at most 3 iterations
     for lbits in range((lo * R_LAG1) % R_LAG0, 0x10000, R_LAG0):
         seed = ((second | lbits) * R_MULT + R_INCR) & 0xffffffff
         if (seed & 0xffff0000) == first:
@@ -149,8 +149,7 @@ R_LOWER_PID_2 = 0x4B8D621D # ((-0x20A49DE2F046 + 0xffff_ffff) >> 16) + (27697 <<
 R_LOWER_IVS_2 = 0x4B8CE21D # ((-0x20A49DE2F046 + 0x7fff_ffff) >> 16) + (27697 << 16)
 R_UPPER_2     = 0x4B8D08D7 # (-0x20A3F728F046 >> 16) + (27697 << 16)
 
-# The range of the second variable is smaller than one.
-# So, in some cases, we can predict that there will be no solutions without having to enter the loop.
+# around 1.54 iterations on average
 def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
     first = (pid & 0xffff) << 16
     third = pid & 0xffff0000
@@ -159,7 +158,8 @@ def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
     lo = (tmp + R_LOWER_PID_2) >> 16
     up = (tmp + R_UPPER_2) >> 16
 
-    # true in around 35% of cases
+    # The range of the bounded variable is approximately 0.65, which is less than 1.
+    # Therefore, in about 35% of cases, we can predict that there will be no solutions without having to enter the loop.
     if lo != up:
         return
 
