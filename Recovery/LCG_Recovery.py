@@ -118,7 +118,8 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
             yield seed
             yield seed ^ 0x80000000
     
-    # true in around 12% of cases
+    # The range of the bounded variable is approximately 2.12.
+    # Therefore, in about 12% of cases, we will enter the third loop.
     if mi != up:
         for lbits in range(up % LAG1, 0x10000, LAG1):
             seed = first | lbits
@@ -184,8 +185,9 @@ def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd
         if (seed & 0x7fff0000) == first:
             yield seed
             yield seed ^ 0x80000000
-    
-    # true in around 30% of cases
+
+    # The range of the bounded variable is approximately 1.30.
+    # Therefore, in about 30% of cases, we will enter the second loop.
     if lo != up:
         for lbits in range((up * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
             seed = ((third | lbits) * R_MULT_2 + R_INCR_2) & 0xffffffff
@@ -250,7 +252,8 @@ def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
         if (seed & 0xffff0000) == first:
             yield seed
     
-    # true in around 22% of cases
+    # The range of the bounded variable is approximately 1.22.
+    # Therefore, in about 22% of cases, we will enter the second loop.
     if lo != up:
         for lbits in range((up * GC_R_LAG1) % GC_R_LAG0, 0x10000, GC_R_LAG0):
             seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
@@ -294,7 +297,8 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
             yield seed
             yield seed ^ 0x80000000
     
-    # true in around 43% of cases
+    # The range of the bounded variable is approximately 2.43.
+    # Therefore, in about 43% of cases, we will enter the third loop.
     if mi != up:
         for lbits in range(up % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
             seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
@@ -318,7 +322,8 @@ def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int,
             yield seed
             yield seed ^ 0x80000000
     
-    # true in around 46% of cases
+    # The range of the bounded variable is approximately 1.46.
+    # Therefore, in about 46% of cases, we will enter the second loop.
     if lo != up:
         for lbits in range((up * GC_LAG1) % GC_LAG0, 0x10000, GC_LAG0):
             seed = first | lbits
@@ -373,7 +378,8 @@ def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:
         if (seed >> 16) == n0:
             yield (seed * R_MULT + 0xFC77A683) & 0xffffffff
 
-    # true in around 41% of cases
+    # The range of the bounded variable is approximately 1.41.
+    # Therefore, in about 41% of cases, we will enter the second loop.
     if lo != up:
         for lbits in range((up * LOTTO_R_LAG0) % LOTTO_R_LAG1, 0x10000, LOTTO_R_LAG1):
             seed = ((n1 | lbits) * LOTTO_R_MULT + LOTTO_R_INCR) & 0xffffffff
@@ -417,8 +423,9 @@ def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
         if (seed & 0x7fff0000) == first:
             yield seed
             yield seed ^ 0x80000000
-    
-    # true in around 30% of cases
+
+    # The range of the bounded variable is approximately 1.30.
+    # Therefore, in about 30% of cases, we will enter the second loop.
     if lo != up:
         for lbits in range((up * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
             seed = ((third | lbits) * R_MULT_2 + RANCH_R_INCR) & 0xffffffff
@@ -456,8 +463,9 @@ def BWRNG_recover_states_from_2x32_bits(out0: int, out1: int) -> Iterator[int]:
         state = ((out1 | lbits) * BW_R_MULT + BW_R_INCR) & 0xffff_ffff_ffff_ffff
         if (state >> 32) == out0:
             yield state
-    
-    # true in around 18% of cases
+
+    # The range of the bounded variable is approximately 1.18.
+    # Therefore, in about 18% of cases, we will enter the second loop.
     if lo != up:
         for lbits in range((up * BW_R_LAG1) % BW_R_LAG0, 0x1_0000_0000, BW_R_LAG0):
             state = ((out1 | lbits) * BW_R_MULT + BW_R_INCR) & 0xffff_ffff_ffff_ffff
@@ -516,7 +524,8 @@ def channel_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, s
     x5_min = ((f5 + CHANNEL_UPPER[5]) >> 32) * R[5]
     x5_max = ((f5 + CHANNEL_LOWER[5]) >> 32) * R[5]
 
-    # at most 720 iterations in total (around 369 on average, 48 in the best case)
+    # At most 720 iterations in total (around 369 on average, 48 in the best case).
+    # The variables are processed in increasing order of their range to minimize the number of additions performed to calculate the linear combinations.
     for x5 in range(x5_min, x5_max + 1, -R[5]):
         for x4 in range(x4_min, x4_max + 1, R[4]):
             l4 = x5 + x4
