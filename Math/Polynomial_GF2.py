@@ -185,7 +185,7 @@ def distinct_primes(n: int) -> Iterator[int]:
         yield n
 
 def poly_irreducibility_gf2(f: int) -> bool:
-    """Checks whether the polynomial f(x) is irreducible using Rabin's algorithm."""
+    """Checks if the polynomial f(x) is irreducible using Rabin's algorithm."""
     if f <= 3:
         return f == 2 or f == 3
     

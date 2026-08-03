@@ -35,7 +35,7 @@ from typing import Iterator
 # Thus, if the determinant of a Lagrange-reduced matrix is negative, the opposite of LAG0 or LAG1 (not the modulus) is used to compensate.
 
 # LOWER and UPPER constants are used to bound the variables in linear combinations in order to calculate potential solutions.
-# In the 2-dimension case, the constants returned by the Sage script have been divided by 2^16, and extra values were added to most of them.
+# In the 2-dimension case, the constants returned by the Sage script have been divided by 2^16 (shifted right by 16), and extra values were added to most of them.
 # The division by 2^16 is due to the fact that the divisions by the determinant of the Lagrange-reduced matrices have been split into 2 subdivisions, and we assume that the 
 # constants have already been divided during the first subdivision. 
 # The extra values were added to prevent unsigned integer overflow (for programming languages such as C++, Rust, C#, etc.) while maintaining consistency with the moduli, or to 
@@ -164,7 +164,7 @@ def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
     if lo != up:
         return
 
-    # at most 3 iterations (around 2.37 on average)
+    # at most 3 iterations
     for lbits in range((lo * R_LAG1_PID_2) % R_LAG0_2, 0x10000, R_LAG0_2):
         seed = ((third | lbits) * R_MULT_2 + R_INCR_2) & 0xffffffff
         if (seed & 0xffff0000) == first:
@@ -363,7 +363,7 @@ LOTTO_R_LAG1  = 0xF7EC     # 63468
 LOTTO_R_LOWER = 0xC0928805 # (0xC09188056124 + 0xffff_ffff) >> 16
 LOTTO_R_UPPER = 0xC092F075 # (0xC092F0756124 >> 16)
 
-# around 1.46 iterations in averages
+# around 1.46 iterations on average
 def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:    
     # 'tmp' must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
     tmp = ((LOTTO_R_MULT * n1 - n0) & 0xffff) * LOTTO_R_LAG1
@@ -546,3 +546,95 @@ def channel_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, s
                                 (((seed * M[4] + I[4]) >> 27) & 31) == spd
                             ):
                                 yield seed
+
+if __name__ == "__main__":
+    from typing import Callable
+    from random import getrandbits
+
+    def test_recover_pid_seeds(f: Callable[[int], Iterator[int]], mult: int, incr: int, n: int, gamecube: bool = False):   
+        if gamecube:
+            get_hi_lo = lambda seed: (seed >> 16, ((seed * mult + incr) >> 16) & 0xffff)
+        else:
+            get_hi_lo = lambda seed: (((seed * mult + incr) >> 16) & 0xffff, seed >> 16)
+
+        for _ in range(n):
+            seed = getrandbits(32)
+
+            pidh, pidl = get_hi_lo(seed)
+            pid = (pidh << 16) | pidl
+
+            assert seed in f(pid), f"{seed = :08X}, {pid = :08X} [{f.__name__}]"
+
+    def test_recover_ivs_seeds(f: Callable[[int, int, int, int, int, int], Iterator[int]], mult: int, incr: int, n: int, ranch: bool = False):
+        if ranch:
+            get_iv1_iv2 = lambda seed: (((seed * mult + incr) >> 16) & 0x7fff, (seed >> 16) & 0x7fff)
+        else:
+            get_iv1_iv2 = lambda seed: ((seed >> 16) & 0x7fff, ((seed * mult + incr) >> 16) & 0x7fff)
+
+        for _ in range(n):
+            seed = getrandbits(32)
+
+            iv1, iv2 = get_iv1_iv2(seed)
+            hp = iv1 & 31
+            atk = (iv1 >> 5) & 31
+            dfs = (iv1 >> 10) & 31
+            spe = iv2 & 31
+            spa = (iv2 >> 5) & 31
+            spd = (iv2 >> 10) & 31
+
+            assert seed in f(hp, atk, dfs, spa, spd, spe), f"{seed = :08X}, ivs = {(hp, atk, dfs, spa, spd, spe)} [{f.__name__}]"
+
+    def test_recover_group_seeds_from_lotto_numbers(n: int):
+        for _ in range(n):
+            group_seed = getrandbits(32)
+
+            n0 = ((group_seed * 0x41C64E6D + 0x3039) >> 16) & 0xffff
+            group_seed_ = (group_seed * 0x6C078965 + 0x1) & 0xffff_ffff
+            n1 = ((group_seed_ * 0x41C64E6D + 0x3039) >> 16) & 0xffff
+
+            assert group_seed in recover_group_seeds_from_lotto_numbers(n0, n1), f"{group_seed = :08X}, {n0 = }, {n1 = } [Group Seed]"
+
+    def test_BWRNG_recover_states_from_2x32_bits(n: int):
+        for _ in range(n):
+            state = getrandbits(64)
+
+            out0 = state >> 32
+            out1 = ((state * 0x5D588B656C078965 + 0x269EC3) >> 32) & 0xffff_ffff
+
+            assert state in BWRNG_recover_states_from_2x32_bits(out0, out1), f"{state = :016X}, {out0 = :08X}, {out1 = :08X} [BW]"
+
+    def test_channel_recover_ivs_seeds(n: int):
+        for _ in range(n):
+            seed = getrandbits(32)
+
+            hp = (seed >> 27) & 31
+            atk = ((seed * 0x000343FD + 0x00269EC3) >> 27) & 31
+            dfs = ((seed * 0xA9FC6809 + 0x1E278E7A) >> 27) & 31
+            spa = ((seed * 0xDDFF5051 + 0x098520C4) >> 27) & 31
+            spd = ((seed * 0x284A930D + 0xA2974C77) >> 27) & 31
+            spe = ((seed * 0x45C82BE5 + 0xD2F65B55) >> 27) & 31
+
+            assert seed in channel_recover_ivs_seeds(hp, atk, dfs, spa, spd, spe), f"{seed = :08X}, ivs = {(hp, atk, dfs, spa, spd, spe)} [Channel]"
+
+
+    #test_recover_pid_seeds(LCRNG_recover_pid_seeds, 0x41C64E6D, 0x6073, 10_000_000)
+
+    #test_recover_ivs_seeds(LCRNG_recover_ivs_seeds, 0x41C64E6D, 0x6073, 10_000_000)
+
+    #test_recover_pid_seeds(LCRNG_recover_pid_seeds_with_skip, 0xC2A29A69, 0xE97E7B6A, 10_000_000)
+
+    #test_recover_ivs_seeds(LCRNG_recover_ivs_seeds_with_skip, 0xC2A29A69, 0xE97E7B6A, 10_000_000)
+
+    #test_recover_ivs_seeds(ranch_recover_ivs_seeds, 0xC2A29A69, 0xD3DC167E, 10_000_000, True)
+
+    #test_recover_group_seeds_from_lotto_numbers(10_000_000)
+
+    #test_recover_pid_seeds(GCRNG_recover_pid_seeds, 0x343FD, 0x269EC3, 10_000_000, True)
+    
+    #test_recover_ivs_seeds(GCRNG_recover_ivs_seeds, 0x343FD, 0x269EC3, 10_000_000)
+
+    #test_recover_ivs_seeds(GCRNG_recover_ivs_seeds_bis, 0x343FD, 0x269EC3, 10_000_000)
+
+    #test_BWRNG_recover_states_from_2x32_bits(10_000_000)
+
+    #test_channel_recover_ivs_seeds(500_000)

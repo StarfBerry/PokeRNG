@@ -153,7 +153,7 @@ if __name__ == "__main__":
     B = np.delete(B, 31, 1) # delete the 31st column to make the matrix invertible
     N = function_to_matrix_gf2(tinymt_next, 128, 128)
     A = matrix_pow_gf2(N, 124)
-    A = np.delete(A, 31, 1) # delete the 31st column to make the product between A and B^-1 possible
+    A = np.delete(A, 31, 1) # delete the 31st column to make the product between A and B^-1 consistent
     P = (A @ matrix_inverse_gf2(B)) & 1
     print_bit_matrix_in_hex(P, 1, 2, [32, 32, 32, 32])
     '''
