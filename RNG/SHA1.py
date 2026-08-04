@@ -168,10 +168,10 @@ def valid_keypresses(combo: int, defective_buttons: int) -> bool:
 
 def keypresses_to_str(combo: int) -> str:
     return " + ".join(
-        Buttons(combo & (1 << i)).name 
+        Buttons(1 << i).name 
         for i in range(combo.bit_length()) 
         if (combo >> i) & 1
-    )   
+    )
 
 def keypresses_to_value(combo: int) -> int:
     return sum(
