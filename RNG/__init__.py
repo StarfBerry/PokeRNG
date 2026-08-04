@@ -11,3 +11,5 @@ from .TinyMT import TinyMT
 from .Xoroshiro import Xoroshiro128Plus, XoroshiroBDSP
 
 from .Xorshift import Xorshift128
+
+from .SHA1 import SHA1, Game, Language, DSType, Buttons
