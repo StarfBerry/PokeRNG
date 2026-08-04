@@ -552,10 +552,10 @@ if __name__ == "__main__":
     from random import getrandbits
 
     def test_recover_pid_seeds(f: Callable[[int], Iterator[int]], mult: int, incr: int, n: int, gamecube: bool = False):   
-        if gamecube:
-            get_hi_lo = lambda seed: (seed >> 16, ((seed * mult + incr) >> 16) & 0xffff)
-        else:
+        if not gamecube:
             get_hi_lo = lambda seed: (((seed * mult + incr) >> 16) & 0xffff, seed >> 16)
+        else:
+            get_hi_lo = lambda seed: (seed >> 16, ((seed * mult + incr) >> 16) & 0xffff)
 
         for _ in range(n):
             seed = getrandbits(32)
@@ -566,10 +566,10 @@ if __name__ == "__main__":
             assert seed in f(pid), f"{seed = :08X}, {pid = :08X} [{f.__name__}]"
 
     def test_recover_ivs_seeds(f: Callable[[int, int, int, int, int, int], Iterator[int]], mult: int, incr: int, n: int, ranch: bool = False):
-        if ranch:
-            get_iv1_iv2 = lambda seed: (((seed * mult + incr) >> 16) & 0x7fff, (seed >> 16) & 0x7fff)
-        else:
+        if not ranch:
             get_iv1_iv2 = lambda seed: ((seed >> 16) & 0x7fff, ((seed * mult + incr) >> 16) & 0x7fff)
+        else:
+            get_iv1_iv2 = lambda seed: (((seed * mult + incr) >> 16) & 0x7fff, (seed >> 16) & 0x7fff)
 
         for _ in range(n):
             seed = getrandbits(32)
@@ -610,9 +610,9 @@ if __name__ == "__main__":
             hp = (seed >> 27) & 31
             atk = ((seed * 0x000343FD + 0x00269EC3) >> 27) & 31
             dfs = ((seed * 0xA9FC6809 + 0x1E278E7A) >> 27) & 31
+            spe = ((seed * 0x45C82BE5 + 0xD2F65B55) >> 27) & 31
             spa = ((seed * 0xDDFF5051 + 0x098520C4) >> 27) & 31
             spd = ((seed * 0x284A930D + 0xA2974C77) >> 27) & 31
-            spe = ((seed * 0x45C82BE5 + 0xD2F65B55) >> 27) & 31
 
             assert seed in channel_recover_ivs_seeds(hp, atk, dfs, spa, spd, spe), f"{seed = :08X}, ivs = {(hp, atk, dfs, spa, spd, spe)} [Channel]"
 
@@ -637,4 +637,4 @@ if __name__ == "__main__":
 
     #test_BWRNG_recover_states_from_2x32_bits(10_000_000)
 
-    #test_channel_recover_ivs_seeds(500_000)
+    #test_channel_recover_ivs_seeds(1_000_000)

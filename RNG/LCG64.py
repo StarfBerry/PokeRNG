@@ -42,16 +42,16 @@ def define_lcg64(mult: int, incr: int) -> type:
 
         def jump(self, n: int):
             while n:
-                i = n.bit_length() - 1
+                i = n.bit_length() - 1 # <==> 63 - std::countl_zero(dist) in C++
                 self.state = (self.state * LCG64.MULT_TABLE[i] + LCG64.INCR_TABLE[i]) & 0xffffffffffffffff
-                n ^= 1 << i # skip zeros (at the cost of calling the bit_length method on n)
+                n ^= 1 << i
                 
         @staticmethod
         def distance(start: int, end: int) -> int:                    
             dist = 0
             while diff := start ^ end:
                 dist |= diff & -diff # <==> diff & (~diff + 1) to isolate the lowest power of 2
-                i = dist.bit_length() - 1 # <==> 63 - std::countl_zero(dist)
+                i = dist.bit_length() - 1 # <==> 63 - std::countl_zero(dist) in C++
                 start = (start * LCG64.MULT_TABLE[i] + LCG64.INCR_TABLE[i]) & 0xffffffffffffffff
             return dist
 

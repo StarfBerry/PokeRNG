@@ -86,9 +86,9 @@ class Xoroshiro128Plus:
         n >>= 7
         
         while n:
-            i = n.bit_length() - 1
+            i = n.bit_length() - 1 # <==> (bit_size - 1) - std::countl_zero(n) in C++
             self.jump_2_pow(i + 7)
-            n ^= 1 << i # skip zeros (at the cost of calling the bit_length method on n)
+            n ^= 1 << i
 
 class XoroshiroBDSP(Xoroshiro128Plus):
     def __init__(self, s0: int, s1: int | None = None):
