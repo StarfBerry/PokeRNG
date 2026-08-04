@@ -12,6 +12,7 @@ def poly_deg_gf2(f: int) -> int:
 def poly_mul_gf2(f: int, g: int) -> int:    
     """Calculates f(x) * g(x)."""
     if f > g:
+        # f > g implies f.bit_length() >= g.bit_length()
         f, g = g, f
     
     res = 0
@@ -50,12 +51,10 @@ def poly_prod_gf2(*args: int) -> int:
 def poly_square_gf2(f: int):
     """Calculates the square of f(x)."""
     res = 0
-    g = f
 
     while f:
         d = f.bit_length() - 1
-        #res ^= 1 << (d << 1) # f^2(x) = f(x^2) in GF(2)
-        res ^= g << d
+        res ^= 1 << (d << 1) # f^2(x) = f(x^2) in GF(2)
         f ^= 1 << d
 
     return res
@@ -106,7 +105,14 @@ def poly_mod_gf2(f: int, m: int) -> int:
     return f
 
 def poly_mul_mod_gf2(f: int, g: int, m: int) -> int:
-    """Calculates f(x) * g(x) modulo m(x)."""        
+    """Calculates f(x) * g(x) modulo m(x)."""
+    f = poly_mod_gf2(f, m)
+    g = poly_mod_gf2(g, m)
+    p = poly_mul_skip_gf2(f, g)
+    return poly_mod_gf2(p, m)
+
+def poly_bounded_mul_mod_gf2(f: int, g: int, m: int) -> int:
+    """Calculates f(x) * g(x) modulo m(x) by immediately reducing the partial product to prevent bit lengths from exceeding the length of m(x)."""        
     f = poly_mod_gf2(f, m)
     g = poly_mod_gf2(g, m)
     
@@ -129,20 +135,15 @@ def poly_mul_mod_gf2(f: int, g: int, m: int) -> int:
     
     return res
 
-def poly_square_mod_gf2(f: int, m: int):
-    """Calculates f^2(x) modulo m(x)."""
-    f = poly_mod_gf2(f, m)
-    f2 = poly_square_gf2(f)
-    return poly_mod_gf2(f2, m)
-
 def poly_pow_mod_gf2(f: int, n: int, m: int) -> int:
     """Calculates f^n(x) modulo m(x) using binary exponentiation."""
+    f = poly_mod_gf2(f, m)
     res = 1
     
     while n:
         if n & 1:
-            res = poly_mul_mod_gf2(res, f, m)
-        f = poly_square_mod_gf2(f, m)
+            res = poly_mod_gf2(poly_mul_skip_gf2(res, f), m)
+        f = poly_mod_gf2(poly_square_gf2(f), m)
         n >>= 1
     
     return res
