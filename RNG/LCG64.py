@@ -42,7 +42,7 @@ def define_lcg64(mult: int, incr: int) -> type:
 
         def jump(self, n: int):
             while n:
-                i = n.bit_length() - 1 # <==> 63 - std::countl_zero(dist) in C++
+                i = n.bit_length() - 1 # <==> 63 - std::countl_zero(n) in C++
                 self.state = (self.state * LCG64.MULT_TABLE[i] + LCG64.INCR_TABLE[i]) & 0xffffffffffffffff
                 n ^= 1 << i
                 
