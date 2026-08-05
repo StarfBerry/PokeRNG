@@ -25,7 +25,7 @@ def define_lcg64(mult: int, incr: int) -> type:
 
         def __init__(self, seed: int):         
             self.state = seed & 0xffffffffffffffff
-        
+
         def next_u64(self) -> int:
             self.state = (self.state * mult + incr) & 0xffffffffffffffff
             return self.state

@@ -36,7 +36,7 @@ class Xorshift128:
         t ^= (t << 11) & 0xffffffff
         t ^= t >> 8
         t ^= self.s3 ^ (self.s3 >> 19) 
- 
+
         self.s0 = self.s1
         self.s1 = self.s2
         self.s2 = self.s3

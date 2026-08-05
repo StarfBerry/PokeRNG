@@ -62,7 +62,7 @@ class MT:
         self.index += 1
 
         return t
-              
+
     def rand(self, maximum: int) -> int:       
         return (self.next_u32() * maximum) >> 32
 

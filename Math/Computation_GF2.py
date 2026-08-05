@@ -138,7 +138,7 @@ if __name__ == "__main__":
     charpoly = matrix_charpoly_gf2(mat)
     print(hex(charpoly)) # 0x1000000010046d8b3f985d65ffd3c8001
     '''
-    
+
     #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486, 127, 3)
 
     # The characteristic polynomial of the TinyMT can be factored by the monomial x to obtain an annihilating polynomial of lower degree.

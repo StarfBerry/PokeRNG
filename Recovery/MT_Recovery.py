@@ -2,7 +2,7 @@ def mt_next_in_place(state: list[int]):
     for i in range(624):
         tmp = (state[i] & 0x80000000) | (state[(i + 1) % 624] & 0x7fffffff)            
         state[i] = state[(i + 397) % 624] ^ (tmp >> 1)
-        if tmp & 1: 
+        if tmp & 1:
             state[i] ^= 0x9908B0DF
 
 def mt_prev_in_place(state: list[int]):
@@ -22,12 +22,12 @@ def mt_prev_in_place(state: list[int]):
 
 def mt_initialization(seed: int) -> list[int]:
     state = [0] * 624
-    
+
     state[0] = seed & 0xffffffff
     for i in range(1, 624):
         seed = (0x6C078965 * (seed ^ (seed >> 30)) + i) & 0xffffffff
         state[i] = seed
-    
+
     mt_next_in_place(state)
 
     return state
@@ -49,7 +49,7 @@ def mt_recover_seed_from_state(state: list[int], max_advc: int = 10_000) -> int 
         if all(state[i] == (s := (0x6C078965 * (s ^ (s >> 30)) + i) & 0xffffffff) for i in range(2, 624)):
             return mt_reverse_init_step(state[1], 1)
         mt_prev_in_place(state)
-    
+
     return None
 
 def mt_untemper(t: int) -> int:
@@ -77,14 +77,14 @@ def mt_recover_seed_from_2_outputs(out0: int, out227: int, ofs: int = 0) -> int 
 
     if prev_s227_msb := (x >> 30) & 1: 
         x ^= 0x40000000
-    
+
     prev_s228 = (x << 1) | prev_s228_lsb
-    
+
     if (mt_reverse_init_step(prev_s228, 228 + ofs) >> 31) != prev_s227_msb:
         prev_s228 |= 0x80000000
-    
+
     seed = mt_reverse_init_loop(prev_s228, 228 + ofs)
-    
+
     state = mt_initialization(seed) 
 
     if state[ofs] == curr_s0 and state[227 + ofs] == curr_s227:
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     import sys, os
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     from RNG import MT
-    
+
     from random import getrandbits, randrange
 
     def test_mt_recover_seed_from_state(n: int = 10_000):
@@ -118,16 +118,16 @@ if __name__ == "__main__":
         for _ in range(n):
             seed = getrandbits(32)
             ofs = randrange(0, 396)
-            
+
             mt.reseed(seed)
             mt.advance(ofs)
             a = mt.next_u32()
             mt.advance(226)
             b = mt.next_u32()
-            
+
             seed_ = mt_recover_seed_from_2_outputs(a, b, ofs)
             assert seed == seed_, f"{seed = }, {seed_ = }, {ofs = }"
-    
+
 
     #test_mt_recover_seed_from_state()
     

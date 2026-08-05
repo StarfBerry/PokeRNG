@@ -17,11 +17,11 @@ def bit_vector_to_int(vec: Vector) -> int:
 def function_to_matrix_gf2(f: Callable[[int], int], row: int, col: int) -> Matrix:
     """Returns the function f encoded as a matrix, assuming f is linear over GF(2)."""
     mat = np.zeros((row, col), np.uint8)
-    
+
     for i in range(col):
         im = f(1 << i) # images of the canonical basis by the function f
         mat[:, i] = int_to_bit_vector(im, row)
-    
+
     return mat
 
 def matrix_reduced_row_echelon_form_gf2(mat: Matrix) -> tuple[Matrix, list[int], int]:
@@ -60,10 +60,10 @@ def matrix_inverse_gf2(mat: Matrix) -> Matrix:
     assert rank == n, f"The matrix is not full rank ({rank = } while {n = })."
 
     inv = np.zeros((n, n), np.uint8)
-    
+
     for i in range(n):
         inv[i] = int_to_bit_vector(operations[i], n)
-    
+
     return inv
 
 def matrix_generalized_inverse_gf2(mat: Matrix) -> Matrix:
@@ -74,7 +74,7 @@ def matrix_generalized_inverse_gf2(mat: Matrix) -> Matrix:
     pivot = 0
     swaps = []
     g_inv = np.zeros((col, row), np.uint8)
-    
+
     for i in range(rank):
         g_inv[i] = int_to_bit_vector(operations[i], row)     
         while reduced[i, pivot] == 0:
@@ -85,7 +85,7 @@ def matrix_generalized_inverse_gf2(mat: Matrix) -> Matrix:
 
     for i, j in reversed(swaps):
         g_inv[[i, j]] = g_inv[[j, i]]
-    
+
     return g_inv
 
 def matrix_kernel_gf2(mat: Matrix) -> Matrix:
@@ -94,7 +94,7 @@ def matrix_kernel_gf2(mat: Matrix) -> Matrix:
     _, operations, rank = matrix_reduced_row_echelon_form_gf2(mat.T)
 
     ker = np.zeros((col, col - rank), np.uint8)
-    
+
     for c, i in enumerate(range(rank, col)):
         ker[:, c] = int_to_bit_vector(operations[i], col)
 
@@ -106,13 +106,13 @@ def matrix_pow_gf2(mat: Matrix, n: int) -> Matrix:
 
     base = mat & 1 # mat's copy
     res = np.identity(mat.shape[0], np.uint8)
-    
+
     while n:
         if n & 1:
             res = (res @ base) & 1
         base = (base @ base) & 1
         n >>= 1
-    
+
     return res
 
 def matrix_equation_gf2(mat: Matrix) -> tuple[int, int]:   
@@ -120,13 +120,13 @@ def matrix_equation_gf2(mat: Matrix) -> tuple[int, int]:
     _, terms, rank = matrix_reduced_row_echelon_form_gf2(mat)
 
     zeros = equation = 0
-    
+
     for i in range(rank, mat.shape[0]):
         if terms[i].bit_count() == 1:
             zeros |= terms[i]
         else:
             equation ^= terms[i]
-    
+
     # To evaluate them on a vector represented as an integer ===> (vec & zeros) == 0 and ((vec & equation).bit_count() & 1) == 0
     return (zeros, equation)
 
@@ -152,7 +152,7 @@ def matrix_charpoly_gf2(mat: Matrix) -> int:
     mask = (1 << (n + 1)) - 1
 
     charpoly = 1
-    
+
     for i in range(n):
         pivot = next(j for j in range(i, n) if P[i][j] != 0) # pivot guaranteed
         for j in range(pivot + 1, n):
@@ -165,15 +165,15 @@ def matrix_charpoly_gf2(mat: Matrix) -> int:
                 for k in range(i + 1, n):
                     P[k][x] ^= poly_mul_skip_gf2(P[k][y], q) & mask
                 x, y = y, x
-            
+
             if P[i][pivot] == 0:
                 pivot = j
-        
+
         if pivot != i:
             # swap columns
             for j in range(i, n):
                 P[j][i], P[j][pivot] = P[j][pivot], P[j][i]
-                
+
         charpoly = poly_mul_skip_gf2(charpoly, P[i][i]) & mask
 
     return charpoly

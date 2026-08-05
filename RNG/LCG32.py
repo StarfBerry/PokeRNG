@@ -25,11 +25,11 @@ def define_lcg32(mult: int, incr: int) -> type:
 
         def __init__(self, seed: int):         
             self.state = seed & 0xffffffff
-        
+
         def next_u32(self) -> int:
             self.state = (self.state * mult + incr) & 0xffffffff
             return self.state
-        
+
         def next_u16(self) -> int:
             return self.next_u32() >> 16
 

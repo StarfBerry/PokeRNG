@@ -10,12 +10,12 @@ def tinymt_prev(s0: int, s1: int, s2: int, s3: int) -> tuple[int, int, int, int]
     if s3 & 1:
         s1 ^= 0x8F7011EE
         s2 ^= 0xFC78FF1F
-    
+
     y = s3
     x = s2 ^ (y << 10) & 0xffffffff
     s2 = s1
     s1 = s0
-    
+
     y ^= x
     y ^= y >> 1
     y ^= y >> 2
@@ -29,13 +29,13 @@ def tinymt_prev(s0: int, s1: int, s2: int, s3: int) -> tuple[int, int, int, int]
     x ^= x << 8
     x ^= x << 16
     x &= 0xffffffff
-    
+
     s3 = y
     s0 ^= x ^ s2
 
     if tinymt_equation(s0, s1, s2, s3) != 0:
         s0 ^= 0x80000000
-    
+
     return (s0, s1, s2, s3)
 
 def tinymt_reversed_init_loop(s0: int, s1: int, s2: int, s3: int) -> tuple[int, int, int, int]:
@@ -62,25 +62,25 @@ def tinymt_recover_seed_from_state(s0: int, s1: int, s2: int, s3: int, max_advc:
             seed, t1, t2, _ = tinymt_reversed_init_loop(s0 ^ 0x80000000, s1, s2, s3)
             if t1 == 0x8F7011EE and t2 == 0xFC78FF1F:
                 return seed
-        
+
         s0, s1, s2, s3 = tinymt_prev(s0, s1, s2, s3)
-    
+
     return None
 
 def tinymt_recover_state_from_127_lsb_sequence(bits: Sequence[int]) -> tuple[int, int, int, int]:
     """Recovers the internal state of a TinyMT instance thanks to the least significant bit of 127 consecutive outputs."""
     if len(bits) != 127:
         raise ValueError("127 bits are needed to run the algorithm.")
-    
+
     s0 = s1 = s2 = s3 = 0
-    
+
     for i in range(127):
         if bits[i] == 1:
             s0 ^= TINYMT_127_LSB_INV_X_ADVC_124[i][0]
             s1 ^= TINYMT_127_LSB_INV_X_ADVC_124[i][1]
             s2 ^= TINYMT_127_LSB_INV_X_ADVC_124[i][2]
             s3 ^= TINYMT_127_LSB_INV_X_ADVC_124[i][3]
-    
+
     return (s0, s1, s2, s3)
 
 # https://github.com/StarfBerry/PokeRNG/blob/490368b256c91cd97dfa212e004a1563843464ef/Math/Computation_GF2.py#L152-L158
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
             state_ = tinymt_recover_state_from_127_lsb_sequence(bits)
             assert state == state_, f"{state = }, {state_ = }"
-    
+
 
     #test_tinymt_recover_seed_from_state()
     

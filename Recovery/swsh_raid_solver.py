@@ -23,12 +23,12 @@ def check_ivs(rng: Xoroshiro128Plus, ivs: list[int], fixed_ivs: int) -> bool:
                 return False
             tmp_ivs ^= 1 << idx
             cnt += 1
-    
+
     for i in range(6):
         if (tmp_ivs & 1) and (ivs[i] != (rng.next_u64() & 31)):
             return False
         tmp_ivs >>= 1
-    
+
     return True
 
 def swsh_recover_raid_seeds(ec: int, pid: int, ivs: list[int]) -> Iterator[tuple[int, int]]:
@@ -42,14 +42,14 @@ def swsh_recover_raid_seeds(ec: int, pid: int, ivs: list[int]) -> Iterator[tuple
 
         for fixed_ivs in range(1, ivs31 + 1):
             rng.restate(s0, s1)
-            
+
             if check_ivs(rng, ivs, fixed_ivs):
                 yield (seed, fixed_ivs)
 
 def swsh_recover_random_shiny_raid_seeds(ec: int, pidl: int, ivs: list[int], shiny: Shiny) -> Iterator[tuple[int, int, int]]:
     ivs31 = ivs.count(31)
     rng = Xoroshiro128Plus(0)
-    
+
     match shiny:
         case Shiny.Star:
             not_shiny = lambda x: x >= 16 or x == 0
@@ -68,20 +68,20 @@ def swsh_recover_random_shiny_raid_seeds(ec: int, pidl: int, ivs: list[int], shi
 
             if not_shiny(x):
                 continue
-            
+
             rng.next_state() # pid
 
             s0, s1 = rng.state
-            
+
             for fixed_ivs in range(1, ivs31 + 1):
                 rng.restate(s0, s1)
-                
+
                 if check_ivs(rng, ivs, fixed_ivs):
                     yield (seed, fixed_ivs, (pidh << 16) | pidl)
 
 def search_swsh_raid_seeds(ec: int, pid: int, ivs: list[int], shiny: Shiny = Shiny.No):   
     results = False
-    
+
     if shiny:
         print("The search for a random shiny (not forced) is slow and will take several seconds ...")
         for seed, fixed_ivs, init_pid in swsh_recover_random_shiny_raid_seeds(ec, pid & 0xffff, ivs, shiny):
@@ -91,11 +91,11 @@ def search_swsh_raid_seeds(ec: int, pid: int, ivs: list[int], shiny: Shiny = Shi
         for seed, fixed_ivs in swsh_recover_raid_seeds(ec, pid, ivs):
             print(f"Seed = 0x{seed:016X} | Fixed IVs = {fixed_ivs}")
             results = True
-        
+
         for seed, fixed_ivs in swsh_recover_raid_seeds(ec, pid ^ 0x1000_0000, ivs):
             print(f"Seed = 0x{seed:016X} | Fixed IVs = {fixed_ivs} (Shiny Lock applied)")
             results = True
-    
+
     if not results:
         print("No results.")
 
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     pid = 0xd8f030c6
     ivs = [31, 31, 31, 31, 20, 31]
     shiny = Shiny.No
-    
+
     '''ec = 0xb93c5409
     pid = 0x81286521
     ivs = [6, 11, 31, 14, 31, 31]

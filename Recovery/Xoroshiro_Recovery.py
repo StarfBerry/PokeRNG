@@ -32,7 +32,7 @@ def xoroshiro_recover_seeds(first: int, second: int) -> Iterator[int]:
             if (a & 1) != (r >> 13):
                 # assumed and recovered bits 58 don't match
                 continue
-            
+
             # the xor operation to recover the bits can be applied after the check because ((XOROSHIRO_CONST >> 45) >> 13) & 1 == 0
 
             # 45-57
@@ -65,11 +65,11 @@ def xoroshiro_recover_seeds_with_skip(first: int, third: int) -> Iterator[int]:
     x1_ = (base_seed >> 19) ^ (x0 >> 6) ^ 0x56 # 0x56 = (XOROSHIRO_CONST >> 43) & 0xff
 
     x2_ = (x0 >> 16) ^ 0x65 # 0x65 = ((XOROSHIRO_CONST >> 40) ^ (XOROSHIRO_CONST >> 43) ^ (XOROSHIRO_CONST >> 56)) & 0xff
-    
+
     x3_ = x1_ ^ (x0 >> 27)
 
     x4_ = x2_ ^ (x0 >> 27)
-    
+
     x5 = (base_seed >> 16) ^ x0 ^ 0x2b1 # 0x2b1 = (XOROSHIRO_CONST >> 40) & 0x1fff
 
     x6 = (base_seed >> 3) ^ (x0 >> 11) ^ 0xe0a # 0xe0a = (XOROSHIRO_CONST >> 54) | ((XOROSHIRO_CONST & 7) << 10)
@@ -97,29 +97,29 @@ def xoroshiro_recover_seeds_with_skip(first: int, third: int) -> Iterator[int]:
 
             # 32-36
             tmp = ((((sub0 - x3) ^ x4) & 0x1f) << 32) | assume
-            
+
             x0 = tmp ^ XOROSHIRO_CONST
 
             # 37-39
             tmp |= (((sub0 - (x1 ^ (x0 >> 27))) ^ x2 ^ (x0 >> 27)) & 0xff) << 32
 
             x0 = tmp ^ XOROSHIRO_CONST
-                
+
             r = ((third - (x5 ^ (x0 >> 27) ^ (x0 >> 24))) ^ x6 ^ (x0 >> 27)) & 0x1fff
 
             if (r >> 10) != bits_check:
                 # recovered bits 37-39 cannot yield a solution
                 continue
-            
+
             # 54-63
             tmp |= (r & 0x3ff) << 54
 
             x0 = tmp ^ XOROSHIRO_CONST
-            
+
             x8 = (tmp >> 30) ^ (x0 >> 17) ^ (x0 >> 54)
 
             x9 = (tmp >> 43) ^ (tmp >> 51) ^ (x0 >> 27) ^ (x0 >> 54) ^ 3 # 3 = (XOROSHIRO_CONST >> 3) & 7
-            
+
             x10 = x8 ^ (x0 >> 38)
 
             x11 = x9 ^ (x0 >> 38)
@@ -132,13 +132,13 @@ def xoroshiro_recover_seeds_with_skip(first: int, third: int) -> Iterator[int]:
 
             for carry1 in range(2):
                 sub1 = t1 - carry1
-                
+
                 # 51-52
                 seed = ((((sub1 - x10) ^ x11) & 3) << 51) | tmp
 
                 x0 = seed ^ XOROSHIRO_CONST
-                
-                # 40-41 
+
+                # 40-41
                 seed |= ((((sub0 - (x14 ^ (x0 >> 43))) >> 8) ^ x12 ^ (x0 >> 51)) & 3) << 40
 
                 x0 = seed ^ XOROSHIRO_CONST
@@ -153,7 +153,7 @@ def xoroshiro_recover_seeds_with_skip(first: int, third: int) -> Iterator[int]:
                 if (a & 0xf) != (r >> 3):
                     # assumed and recovered bits 43-46 don't match
                     continue
-                
+
                 # 42
                 seed |= r << 40
 
@@ -164,20 +164,21 @@ def xoroshiro_recover_seeds_with_skip(first: int, third: int) -> Iterator[int]:
                 test = ((((s0 << 24) | (s0 >> 40)) ^ s1 ^ (s1 << 16)) + ((s1 << 37) | (s1 >> 27))) & 0xffff_ffff
 
                 if test == third:
+                    # at most 129 solutions ???
                     yield seed
 
 def xoroshiro_recover_state_from_128_lsb_sequence(bits: Sequence[int]) -> tuple[int, int]:
     """Recovers the internal state of a Xoroshiro128+ instance thanks to the least significant bit of 128 consecutive outputs."""
     if len(bits) != 128:
         raise ValueError("128 bits are needed to run the algorithm.")
-    
+
     s0 = s1 = 0
-    
+
     for i in range(128):
         if bits[i] == 1:
             s0 ^= XOROSHIRO_128_LSB_INV_X_ADVC_128[i][0]
             s1 ^= XOROSHIRO_128_LSB_INV_X_ADVC_128[i][1]
-    
+
     return (s0, s1)
 
 # https://github.com/StarfBerry/PokeRNG/blob/f74a5b39de21e7c674eb2260fa8b6817f2bfc189/Math/Computation_GF2.py#L161-L164
@@ -287,17 +288,17 @@ if __name__ == "__main__":
         for _ in range(n):
             rng.reseed(getrandbits(64))
             rng.jump(getrandbits(16))
-            
+
             # https://billo-guides.github.io/retail/swsh/overworld/seed-finding-and-monitoring#seedfinder-overview
             for i in range(128): 
                 bits[i] = rng.next_u64() & 1 # attack animation from the summary of a Pokémon (0 for physical, 1 for special)
-            
+
             state = rng.state
 
             state_ = xoroshiro_recover_state_from_128_lsb_sequence(bits)
             assert state == state_, f"{state = }, {state_ = }"
 
-    
+
     #test_xoroshiro_recover_seeds()
 
     #test_xoroshiro_recover_seeds_with_skip()

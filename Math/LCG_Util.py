@@ -4,11 +4,11 @@ from typing import Sequence
 def inv_mod_pow_2(n: int, p: int) -> int:
     """Calculates the multiplicative inverse of n modulo 2^p, using the Extended Euclidean algorithm."""  
     assert (n & 1) == 1, "n must be odd to be relatively prime with a power of 2."
-    
+
     p2 = 1 << p
     prev_r, r = n, p2
     prev_x, x = 1, 0
-    
+
     while r != 1:
         q = prev_r // r
         prev_r, r = r, prev_r - q * r

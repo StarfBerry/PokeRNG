@@ -78,7 +78,7 @@ UPPER = 0x6483CBBC # (0x4BBCEE25 >> 16) + (51463 << 15)
 def LCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     first = (pid & 0xffff) << 16
     second = pid & 0xffff0000
-    
+
     tmp = (((first - second * R_MULT) >> 16) & 0xffff) * R_LAG0
     lo = (tmp + R_LOWER) >> 16
     up = (tmp + R_UPPER) >> 16
@@ -87,7 +87,7 @@ def LCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     # Therefore, in about 10% of cases, we can predict that there will be no solutions without having to enter the loop.
     if lo != up: 
         return
-    
+
     # at most 3 iterations
     for lbits in range((lo * R_LAG1) % R_LAG0, 0x10000, R_LAG0):
         seed = ((second | lbits) * R_MULT + R_INCR) & 0xffffffff
@@ -111,13 +111,13 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
         if ((seed * MULT + INCR) & 0x7fff0000) == second:
             yield seed
             yield seed ^ 0x80000000
-    
+
     for lbits in range(mi % LAG1, 0x10000, LAG1):
         seed = first | lbits
         if ((seed * MULT + INCR) & 0x7fff0000) == second:
             yield seed
             yield seed ^ 0x80000000
-    
+
     # The range of the bounded variable is approximately 2.12.
     # Therefore, in about 12% of cases, we will enter the third loop.
     if mi != up:
@@ -154,7 +154,7 @@ R_UPPER_2     = 0x4B8D08D7 # (-0x20A3F728F046 >> 16) + (27697 << 16)
 def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
     first = (pid & 0xffff) << 16
     third = pid & 0xffff0000
-    
+
     tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
     lo = (tmp + R_LOWER_PID_2) >> 16
     up = (tmp + R_UPPER_2) >> 16
@@ -174,7 +174,7 @@ def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
 def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first = ((dfs << 10) | (atk << 5) | hp ) << 16
     third = ((spd << 10) | (spa << 5) | spe) << 16
-    
+
     tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
     lo = (tmp + R_LOWER_IVS_2) >> 15
     up = (tmp + R_UPPER_2) >> 15
@@ -240,7 +240,7 @@ GC_UPPER = 0x3ABA7D05 # (-0x1102FAC405 >> 16) + (30103 << 15)
 def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     first = pid & 0xffff0000
     second = (pid & 0xffff) << 16
-    
+
     # 'tmp' must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
     tmp = (((first - second * GC_R_MULT) >> 16) & 0xffff) * GC_R_LAG0
     lo = (tmp + GC_R_LOWER) >> 16
@@ -251,7 +251,7 @@ def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
         seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
         if (seed & 0xffff0000) == first:
             yield seed
-    
+
     # The range of the bounded variable is approximately 1.22.
     # Therefore, in about 22% of cases, we will enter the second loop.
     if lo != up:
@@ -262,11 +262,11 @@ def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
 
 def channel_recover_pid_seeds(pid: int) -> Iterator[int]:
     x = 40122 ^ (pid >> 16) ^ ((pid & 0xffff) < 8) # failed implementation of the shiny lock due to operator precedence
-    for seed in GCRNG_recover_pid_seeds(pid): 
+    for seed in GCRNG_recover_pid_seeds(pid):
         sid = ((seed * GC_R_MULT + GC_R_INCR) >> 16) & 0xffff
         if x == sid:
             yield seed
-    
+
     x ^= 0x8000
     for seed in GCRNG_recover_pid_seeds(pid ^ 0x80000000): 
         sid = ((seed * GC_R_MULT + GC_R_INCR) >> 16) & 0xffff
@@ -290,13 +290,13 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
         if (seed & 0x7fff0000) == first:
             yield seed
             yield seed ^ 0x80000000
-    
+
     for lbits in range(mi % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
         seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
         if (seed & 0x7fff0000) == first:
             yield seed
             yield seed ^ 0x80000000
-    
+
     # The range of the bounded variable is approximately 2.43.
     # Therefore, in about 43% of cases, we will enter the third loop.
     if mi != up:
@@ -321,7 +321,7 @@ def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int,
         if ((seed * GC_MULT + GC_INCR) & 0x7fff0000) == second:
             yield seed
             yield seed ^ 0x80000000
-    
+
     # The range of the bounded variable is approximately 1.46.
     # Therefore, in about 46% of cases, we will enter the second loop.
     if lo != up:
@@ -412,7 +412,7 @@ RANCH_R_UPPER = 0x670A2A11 # (-0x526D5EE6A92 >> 16) + (27697 << 16)
 def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first = ((spd << 10) | (spa << 5) | spe) << 16
     third = ((dfs << 10) | (atk << 5) | hp ) << 16
-    
+
     tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
     lo = (tmp + RANCH_R_LOWER) >> 15
     up = (tmp + RANCH_R_UPPER) >> 15
@@ -630,7 +630,7 @@ if __name__ == "__main__":
     #test_recover_group_seeds_from_lotto_numbers(10_000_000)
 
     #test_recover_pid_seeds(GCRNG_recover_pid_seeds, 0x343FD, 0x269EC3, 10_000_000, True)
-    
+
     #test_recover_ivs_seeds(GCRNG_recover_ivs_seeds, 0x343FD, 0x269EC3, 10_000_000)
 
     #test_recover_ivs_seeds(GCRNG_recover_ivs_seeds_bis, 0x343FD, 0x269EC3, 10_000_000)
