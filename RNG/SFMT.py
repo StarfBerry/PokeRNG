@@ -57,7 +57,7 @@ class SFMT:
 
             state[a] ^= (state[a] << 8) ^ ((state[b] >> 11) & 0xDFFFFFEF)
             state[a] ^= (state[c] >> 8) ^ (state[c + 1] << 24) ^ (state[d] << 18)
-            self.state[a] &= 0xffffffff
+            state[a] &= 0xffffffff
 
             b, c, d = (b + 4) % 624, d, a
 
