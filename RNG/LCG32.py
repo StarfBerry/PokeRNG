@@ -13,7 +13,7 @@ def lcg32_jump_tables(mult: int, incr: int) -> tuple[tuple[int, ...], tuple[int,
 def define_lcg32(mult: int, incr: int) -> type:
     # Hull-Dobell Theorem for maximum period (https://en.wikipedia.org/wiki/Linear_congruential_generator#m_a_power_of_2,_c_%E2%89%A0_0)
     assert mult % 4 == 1 and incr % 2 == 1, "The LCG doesn't have maximum period."
-    
+
     # Maximum potency for better randomness (https://fr.wikipedia.org/wiki/G%C3%A9n%C3%A9rateur_congruentiel_lin%C3%A9aire#Le_potentiel)
     assert mult % 8 == 5, "The multiplier doesn't have maximum potency."
 
@@ -38,11 +38,11 @@ def define_lcg32(mult: int, incr: int) -> type:
 
         def rand_div(self, maximum: int) -> int:
             return self.next_u16() // (0xffff // maximum + 1)
-        
+
         def advance(self, n: int):
             for _ in range(n):
                 self.state = (self.state * mult + incr) & 0xffffffff
-                    
+
         def jump(self, n: int):
             while n:
                 i = n.bit_length() - 1 # <==> 31 - std::countl_zero(n) in C++
@@ -57,7 +57,7 @@ def define_lcg32(mult: int, incr: int) -> type:
                 i = dist.bit_length() - 1 # <==> 31 - std::countl_zero(dist) in C++
                 start = (start * LCG32.MULT_TABLE[i] + LCG32.INCR_TABLE[i]) & 0xffffffff
             return dist
-    
+
     return LCG32
 
 LCRNG = define_lcg32(0x41C64E6D, 0x6073)

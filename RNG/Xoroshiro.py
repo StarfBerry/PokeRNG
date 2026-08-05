@@ -14,13 +14,13 @@ def splitmix(seed: int) -> int:
 XOROSHIRO_S1_CONST = 0x82A2B175229D6A5B
 
 class Xoroshiro128Plus:    
-    def __init__(self, s0: int, s1: int = XOROSHIRO_S1_CONST):       
+    def __init__(self, s0: int, s1: int = XOROSHIRO_S1_CONST):
         self.restate(s0, s1)
-    
+
     @property
     def state(self) -> tuple[int, int]:
         return (self.s0, self.s1)
-    
+
     @state.setter
     def state(self, seq: Sequence[int]):
         self.restate(seq[0], seq[1])
@@ -28,7 +28,7 @@ class Xoroshiro128Plus:
     def reseed(self, seed: int):
         self.s0 = seed & 0xffffffffffffffff
         self.s1 = XOROSHIRO_S1_CONST
-    
+
     def restate(self, s0: int, s1: int):
         self.s0 = s0 & 0xffffffffffffffff
         self.s1 = s1 & 0xffffffffffffffff
@@ -45,9 +45,9 @@ class Xoroshiro128Plus:
 
     def next_u64(self) -> int:
         out = (self.s0 + self.s1) & 0xffffffffffffffff
-        self.next_state()        
+        self.next_state()
         return out
-    
+
     def next_u32(self) -> int:
         return self.next_u64() & 0xffffffff
 
@@ -61,7 +61,7 @@ class Xoroshiro128Plus:
     def advance(self, n: int):
         for _ in range(n):
             self.next_state()
-    
+
     def reverse(self, n: int):
         for _ in range(n):
             self.prev_state()
@@ -69,22 +69,22 @@ class Xoroshiro128Plus:
     def jump_2_pow(self, n: int):
         s0 = s1 = 0
         poly = XOROSHIRO_JUMP_TABLE[n]
-        
+
         while poly:
             if poly & 1:
                 s0 ^= self.s0
                 s1 ^= self.s1
-            
+
             self.next_state()
             poly >>= 1
-        
+
         self.s0 = s0
         self.s1 = s1
 
     def jump(self, n: int):
         self.advance(n & 0x7f)
         n >>= 7
-        
+
         while n:
             i = n.bit_length() - 1 # <==> (bit_size - 1) - std::countl_zero(n) in C++
             self.jump_2_pow(i + 7)
@@ -103,7 +103,7 @@ class XoroshiroBDSP(Xoroshiro128Plus):
 
     def next_u32(self) -> int:
         return self.next_u64() >> 32
- 
+
     def rand(self, maximum: int) -> int:
         return self.next_u32() % maximum
 

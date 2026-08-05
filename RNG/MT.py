@@ -18,7 +18,7 @@ class MT:
         
         self.twist()
         self.index = 0
-    
+
     def restate(self, seq: Sequence[int]):        
         for i in range(624): 
             self.state[i] = seq[i] & 0xffffffff
@@ -62,19 +62,19 @@ class MT:
         self.index += 1
 
         return t
-
-    def next_u16(self) -> int:
-        return self.next_u32() >> 16
               
     def rand(self, maximum: int) -> int:       
         return (self.next_u32() * maximum) >> 32
+
+    def rand_mod(self, maximum: int) -> int:
+        return self.next_u32() % maximum
 
     def advance(self, n: int):
         self.index += n
         while self.index > 624:
             self.twist()
             self.index -= 624
-    
+
     def reverse(self, n: int):
         self.index -= n
         while self.index < 0:

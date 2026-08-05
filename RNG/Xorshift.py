@@ -8,7 +8,7 @@ class Xorshift128:
             self.reseed(init)
         else:
             self.state = init
-                                           
+
     @property
     def state(self) -> tuple[int, int, int, int]:
         return (self.s0, self.s1, self.s2, self.s3)
@@ -16,19 +16,19 @@ class Xorshift128:
     @state.setter
     def state(self, seq: Sequence[int]):
         self.restate(seq[0], seq[1], seq[2], seq[3])
-    
+
     def reseed(self, seed: int):
         self.s0 = seed & 0xffffffff
         self.s1 = (self.s0 * 0x6C078965 + 1) & 0xffffffff
         self.s2 = (self.s1 * 0x6C078965 + 1) & 0xffffffff
         self.s3 = (self.s2 * 0x6C078965 + 1) & 0xffffffff
-    
-    def restate(self, s0: int, s1: int, s2: int, s3: int):        
+
+    def restate(self, s0: int, s1: int, s2: int, s3: int):
         self.s0 = s0 & 0xffffffff
         self.s1 = s1 & 0xffffffff
         self.s2 = s2 & 0xffffffff
         self.s3 = s3 & 0xffffffff
-        
+
         assert self.s0 | self.s1 | self.s2 | self.s3
 
     def next_state(self):
@@ -41,13 +41,13 @@ class Xorshift128:
         self.s1 = self.s2
         self.s2 = self.s3
         self.s3 = t
-    
+
     def prev_state(self):
         t = self.s3
         self.s3 = self.s2
         self.s2 = self.s1
         self.s1 = self.s0
-        
+
         t ^= self.s3 ^ (self.s3 >> 19)
         t ^= t >> 8
         t ^= t >> 16
@@ -64,7 +64,7 @@ class Xorshift128:
 
     def rand(self, maximum: int) -> int:
         return self.next_u32() % maximum
-    
+
     def rand_range(self, minimum: int, maximum: int) -> int:
         diff = (maximum - minimum) & 0xffffffff
         return minimum + (self.next() % diff)
@@ -72,7 +72,7 @@ class Xorshift128:
     def advance(self, n: int):
         for _ in range(n):
             self.next_state()
-    
+
     def reverse(self, n: int):
         for _ in range(n):
             self.prev_state()
@@ -80,7 +80,7 @@ class Xorshift128:
     def jump_2_pow(self, n: int):
         s0 = s1 = s2 = s3 = 0
         poly = XORSHIFT_JUMP_TABLE[n]
-        
+
         while poly:
             if poly & 1:
                 s0 ^= self.s0
@@ -90,7 +90,7 @@ class Xorshift128:
 
             self.next_state()
             poly >>= 1
-        
+
         self.s0 = s0
         self.s1 = s1
         self.s2 = s2
@@ -99,7 +99,7 @@ class Xorshift128:
     def jump(self, n: int):
         self.advance(n & 0x7f)
         n >>= 7
-        
+
         while n:
             i = n.bit_length() - 1 # <==> (bit_size - 1) - std::countl_zero(n) in C++
             self.jump_2_pow(i + 7)

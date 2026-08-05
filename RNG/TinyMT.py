@@ -2,8 +2,8 @@
 
 from typing import Sequence
 
-class TinyMT:        
-    def __init__(self, init: int | Sequence[int]):      
+class TinyMT:
+    def __init__(self, init: int | Sequence[int]):
         if isinstance(init, int):
             self.reseed(init)
         else:
@@ -26,7 +26,7 @@ class TinyMT:
 
     def reseed(self, seed: int):
         s0, s1, s2, s3 = seed & 0xffffffff, 0x8F7011EE, 0xFC78FF1F, 0x3793FDFF
-        
+
         s1 ^= (0x6C078965 * (s0 ^ (s0 >> 30)) + 1) & 0xffffffff
         s2 ^= (0x6C078965 * (s1 ^ (s1 >> 30)) + 2) & 0xffffffff
         s3 ^= (0x6C078965 * (s2 ^ (s2 >> 30)) + 3) & 0xffffffff
@@ -42,12 +42,12 @@ class TinyMT:
 
         self.advance(8)
 
-    def restate(self, s0: int, s1: int, s2: int, s3: int):        
+    def restate(self, s0: int, s1: int, s2: int, s3: int):
         self.s0 = s0 & 0xffffffff
         self.s1 = s1 & 0xffffffff
         self.s2 = s2 & 0xffffffff
         self.s3 = s3 & 0xffffffff
-        
+
         self.period_certification()
 
     def twist(self):
@@ -65,7 +65,7 @@ class TinyMT:
         if y & 1:
             self.s1 ^= 0x8F7011EE
             self.s2 ^= 0xFC78FF1F
-    
+
     def untwist(self):
         """
         Technically the TinyMT next state function is not bijective so it doesn't have an inverse.
@@ -77,12 +77,12 @@ class TinyMT:
         if self.s3 & 1:
             self.s1 ^= 0x8F7011EE
             self.s2 ^= 0xFC78FF1F
-        
+
         y = self.s3
         x = self.s2 ^ (y << 10) & 0xffffffff
         self.s2 = self.s1
         self.s1 = self.s0
-        
+
         y ^= x
         y ^= y >> 1
         y ^= y >> 2
@@ -96,54 +96,54 @@ class TinyMT:
         x ^= x << 8
         x ^= x << 16
         x &= 0xffffffff
-        
+
         self.s3 = y
         self.s0 ^= x ^ self.s2
 
         # Evaluation of the equation
         eq = (self.s0 >> 31) ^ (self.s1 >> 31) ^ self.s2.bit_count() ^ (self.s3 & 0x3fffff).bit_count()
-        if (eq & 1) != 0: 
+        if (eq & 1) != 0:
             self.s0 ^= 0x80000000
 
     def next_u32(self) -> int:
         self.twist()
-        
+
         # temper
         t = (self.s0 + (self.s2 >> 8)) & 0xffffffff
         if t & 1: 
             t ^= 0x3793FDFF
         t ^= self.s3
-        
+
         return t
     
-    def next_u16(self) -> int:
-        return self.next_u32() >> 16
-
     def rand(self, maximum: int) -> int:
+        return (self.next_u32() * maximum) >> 32
+
+    def rand_mod(self, maximum: int) -> int:
         return self.next_u32() % maximum
 
     def advance(self, n: int):
-        for _ in range(n): 
+        for _ in range(n):
             self.twist()
-    
+
     def reverse(self, n: int):
-        for _ in range(n): 
+        for _ in range(n):
             self.untwist()
 
     def jump_2_pow(self, n: int):
         s0 = s1 = s2 = s3 = 0
         poly = TINYMT_JUMP_TABLE[n]
-        
+
         while poly:
             if poly & 1:
                 s0 ^= self.s0
                 s1 ^= self.s1
                 s2 ^= self.s2
                 s3 ^= self.s3
-            
+
             self.twist()
             poly >>= 1
-        
+
         self.s0 = s0
         self.s1 = s1
         self.s2 = s2
@@ -152,11 +152,11 @@ class TinyMT:
     def jump(self, n: int):
         self.advance(n & 0x7f)
         n >>= 7
-        
+
         while n:
             i = n.bit_length() - 1 # <==> (bit_size - 1) - std::countl_zero(n) in C++
             self.jump_2_pow(i + 7)
-            n ^= 1 << i     
+            n ^= 1 << i
 
 # https://github.com/StarfBerry/PokeRNG/blob/f74a5b39de21e7c674eb2260fa8b6817f2bfc189/Math/Computation_GF2.py#L145
 TINYMT_JUMP_TABLE = (

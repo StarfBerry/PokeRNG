@@ -1,3 +1,5 @@
+# SHA1
+
 from enum import IntEnum
 
 class Game(IntEnum):
@@ -14,7 +16,7 @@ class Language(IntEnum):
     Spanish = 4
     English = 5
     Korean = 6
-    
+
 class DSType(IntEnum):
     DS = 0
     DSi = 1
@@ -45,11 +47,11 @@ class Buttons(IntEnum):
     LeftRight = Left | Right
 
 BUTTONS_VALUES = (
-    0x10000, 0x20000, 
-    0x40000, 0x80000, 
-    0x1000000, 0x2000000, 
-    0x4000000, 0x8000000, 
-    0x10000000, 0x20000000, 
+    0x10000, 0x20000,
+    0x40000, 0x80000,
+    0x1000000, 0x2000000,
+    0x4000000, 0x8000000,
+    0x10000000, 0x20000000,
     0x40000000, 0x80000000
 )
 
@@ -191,7 +193,7 @@ def calc_week_day(year: int, month: int, day: int) -> int:
 # Binary-Coded Decimal
 def calc_BCD(val: int) -> int:
     val &= 0xff
-    return ((val // 10) << 4) + (val % 10)
+    return ((val // 10) << 4) | (val % 10)
 
 def rotl(x: int, n: int) -> int:
     return ((x << n) | (x >> (32 - n))) & 0xffff_ffff
@@ -296,7 +298,7 @@ class SHA1:
         lo = byteswap((a + 0x67452301) & 0xffff_ffff)
         hi = byteswap((b + 0xefcdab89) & 0xffff_ffff)
         seed = (hi << 32) | lo
-        
+
         return (seed * 0x5D588B656C078965 + 0x269EC3) & 0xffff_ffff_ffff_ffff
 
 if __name__ == "__main__":
