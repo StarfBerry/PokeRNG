@@ -188,7 +188,8 @@ def calc_week_day(year: int, month: int, day: int) -> int:
     year -= month < 3
     return (year + (year >> 2) - (year // 100) + (year // 400) + T[month - 1] + day) % 7
 
-def calc_bcd(val: int) -> int:
+# Binary-Coded Decimal
+def calc_BCD(val: int) -> int:
     val &= 0xff
     return ((val // 10) << 4) + (val % 10)
 
@@ -239,9 +240,9 @@ class SHA1:
         assert 1 <= month <= 12, "invalid month"
         assert 1 <= day <= (DAYS[month - 1] + (month == 2 and (year % 4) == 0)), "invalid day"
 
-        val  = calc_bcd(year - 2000) << 24 
-        val |= calc_bcd(month) << 16 
-        val |= calc_bcd(day) << 8
+        val  = calc_BCD(year - 2000) << 24 
+        val |= calc_BCD(month) << 16 
+        val |= calc_BCD(day) << 8
         val |= calc_week_day(year, month, day)
 
         self.w[8] = val
@@ -251,9 +252,9 @@ class SHA1:
         assert 0 <= minute <= 59, "invalid minute"
         assert 0 <= second <= 59, "invalid second"
 
-        val  = calc_bcd(hour) << 24 
-        val |= calc_bcd(minute) << 16 
-        val |= calc_bcd(second) << 8
+        val  = calc_BCD(hour) << 24 
+        val |= calc_BCD(minute) << 16 
+        val |= calc_BCD(second) << 8
 
         if hour >= 12 and self.dstype != DSType.DS3:
             val |= 0x40000000
@@ -280,7 +281,7 @@ class SHA1:
                 f = b ^ c ^ d
                 k = 0x6ed9eba1
             elif i <= 59:
-                f = (b & c) | (b | c) & d
+                f = (b & c) | ((b | c) & d)
                 k = 0x8f1bbcdc
             else:
                 f = b ^ c ^ d
