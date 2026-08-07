@@ -104,7 +104,7 @@ class SFMT:
 
         return (hi << 32) | lo
 
-    def rand_mod(self, maximum: int) -> int:
+    def rand(self, maximum: int) -> int:
         return self.next_u64() % maximum
 
     def advance(self, n: int):
