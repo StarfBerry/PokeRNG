@@ -15,7 +15,9 @@ class Xorshift128:
 
     @state.setter
     def state(self, seq: Sequence[int]):
-        self.restate(seq[0], seq[1], seq[2], seq[3])
+        assert len(seq) == 4, "The length of the sequence must be 4."
+
+        self.restate(*seq)
 
     def reseed(self, seed: int):
         self.s0 = seed & 0xffffffff

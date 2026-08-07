@@ -32,6 +32,8 @@ class SFMT:
         self.index = 0
 
     def restate(self, seq: Sequence[int]):
+        assert len(seq) == 624, "The length of the sequence must be 624."
+
         for i in range(624): 
             self.state[i] = seq[i] & 0xffffffff
 

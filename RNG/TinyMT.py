@@ -15,7 +15,9 @@ class TinyMT:
 
     @state.setter
     def state(self, seq: Sequence[int]):
-        self.restate(seq[0], seq[1], seq[2], seq[3])
+        assert len(seq) == 4, "The length of the sequence must be 4."
+
+        self.restate(*seq)
 
     def period_certification(self):
         if self.s1 == 0 and self.s2 == 0 and self.s3 == 0 and (self.s0 & 0x7fffffff) == 0:

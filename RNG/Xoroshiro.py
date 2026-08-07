@@ -23,7 +23,9 @@ class Xoroshiro128Plus:
 
     @state.setter
     def state(self, seq: Sequence[int]):
-        self.restate(seq[0], seq[1])
+        assert len(seq) == 2, "The length of the sequence must be 2."
+
+        self.restate(*seq)
 
     def reseed(self, seed: int):
         self.s0 = seed & 0xffffffffffffffff
@@ -54,9 +56,9 @@ class Xoroshiro128Plus:
     def rand(self, maximum: int) -> int:
         mask = (1 << (maximum - 1).bit_length()) - 1
         while 1:
-            rnd = self.next_u64() & mask
-            if rnd < maximum:
-                return rnd
+            out = self.next_u64() & mask
+            if out < maximum:
+                return out
 
     def advance(self, n: int):
         for _ in range(n):

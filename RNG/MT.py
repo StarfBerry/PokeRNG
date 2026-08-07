@@ -15,14 +15,16 @@ class MT:
         for i in range(1, 624):
             seed = (0x6C078965 * (seed ^ (seed >> 30)) + i) & 0xffffffff
             self.state[i] = seed
-        
+
         self.twist()
         self.index = 0
 
     def restate(self, seq: Sequence[int]):        
+        assert len(seq) == 624, "The length of the sequence must be 624."
+
         for i in range(624): 
             self.state[i] = seq[i] & 0xffffffff
-        
+
         self.index = 0
 
     def twist(self):
