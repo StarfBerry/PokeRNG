@@ -85,11 +85,12 @@ class Xoroshiro128Plus:
 
     def jump(self, n: int):
         self.advance(n & 0x7f)
-        n >>= 7
+        n &= ~0x7f # sets the 7 least significant bits to 0
 
         while n:
             i = n.bit_length() - 1 # <==> (bit_size - 1) - std::countl_zero(n) in C++
-            self.jump_2_pow(i + 7)
+            #i = (n & -n).bit_length() - 1 # <==> std::countr_zero(n) in C++
+            self.jump_2_pow(i)
             n ^= 1 << i
 
 class XoroshiroBDSP(Xoroshiro128Plus):
