@@ -238,7 +238,7 @@ class SHA1:
         self.w[5] = byteswap(val)
 
     def set_date(self, year: int, month: int, day: int):
-        assert 2000 <= year <= 2099, "invalid year"
+        assert 2000 <= year <= 2099 if self.dstype != DSType.DS3 else 2050, "invalid year"
         assert 1 <= month <= 12, "invalid month"
         assert 1 <= day <= (DAYS[month - 1] + (month == 2 and (year % 4) == 0)), "invalid day"
 
