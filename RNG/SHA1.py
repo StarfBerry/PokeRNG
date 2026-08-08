@@ -190,9 +190,8 @@ def calc_week_day(year: int, month: int, day: int) -> int:
     year -= month < 3
     return (year + (year >> 2) - (year // 100) + (year // 400) + T[month - 1] + day) % 7
 
-# Binary-Coded Decimal
+# Binary-Coded Decimal for integers < 100
 def calc_BCD(val: int) -> int:
-    val &= 0xff
     return ((val // 10) << 4) | (val % 10)
 
 def rotl(x: int, n: int) -> int:
@@ -213,9 +212,8 @@ class SHA1:
         gxstat &= 0xff
 
         self.dstype = dstype
-        self.defective_buttons = defective_buttons
-
         self.max_year = 2099 if dstype != DSType.DS3 else 2050
+        self.defective_buttons = defective_buttons
 
         self.w = [0] * 80
 
@@ -235,7 +233,7 @@ class SHA1:
         timer0 &= 0xffff_ffff
         vcount &= 0xff
 
-        val = ((vcount << 16) | timer0) & 0xffff_ffff
+        val = (vcount << 16) | timer0
 
         self.w[5] = byteswap(val)
 
@@ -297,8 +295,8 @@ class SHA1:
             t = (rotl(a, 5) + f + e + k + w[i]) & 0xffff_ffff
             a, b, c, d, e = t, a, rotl(b, 30), c, d
 
-        lo = byteswap((a + 0x67452301) & 0xffff_ffff)
-        hi = byteswap((b + 0xefcdab89) & 0xffff_ffff)
+        lo = byteswap(a + 0x67452301)
+        hi = byteswap(b + 0xefcdab89)
         seed = (hi << 32) | lo
 
         return (seed * 0x5D588B656C078965 + 0x269EC3) & 0xffff_ffff_ffff_ffff

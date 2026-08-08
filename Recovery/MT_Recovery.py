@@ -55,7 +55,7 @@ def mt_recover_seed_from_state(state: list[int], max_advc: int = 10_000) -> int 
 def mt_untemper(t: int) -> int:
     t ^= t >> 18
     t ^= (t << 15) & 0xEFC60000
-    t ^= (t << 7 ) & 0x9D2C5680
+    t ^= (t <<  7) & 0x9D2C5680
     t ^= (t << 14) & 0x94284000
     t ^= (t << 28) & 0x10000000
     t ^= t >> 11
