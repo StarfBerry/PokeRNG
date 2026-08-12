@@ -185,7 +185,7 @@ def matrix_det_gf2x(mat: MatrixPoly, in_place: bool = False, max_degree: int = -
 
     return det
 
-def matrix_charpoly_gf2(mat: Matrix):
+def matrix_charpoly_gf2(mat: Matrix) -> int:
     """Computes the characteristic polynomial of the given matrix."""
     n = mat.shape[0]
     assert n == mat.shape[1], "The matrix must be square."
