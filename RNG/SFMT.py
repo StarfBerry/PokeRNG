@@ -108,13 +108,13 @@ class SFMT:
         return self.next_u64() % maximum
 
     def advance(self, n: int):
-        self.index += n
+        self.index += 2 * n
         while self.index > 624:
             self.twist()
             self.index -= 624
 
     def reverse(self, n: int):
-        self.index -= n
+        self.index -= 2 * n
         while self.index < 0:
             self.untwist()
             self.index += 624

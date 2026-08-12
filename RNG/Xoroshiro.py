@@ -24,7 +24,6 @@ class Xoroshiro128Plus:
     @state.setter
     def state(self, seq: Sequence[int]):
         assert len(seq) == 2, "The length of the sequence must be 2."
-
         self.restate(*seq)
 
     def reseed(self, seed: int):

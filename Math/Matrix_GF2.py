@@ -1,10 +1,11 @@
 import numpy as np
 from typing import Callable
 from itertools import chain
-from Polynomial_GF2 import poly_divmod_gf2, poly_mul_skip_gf2
+from Polynomial_GF2 import poly_mul_skip_gf2, poly_divmod_gf2
 
-type Vector = np.ndarray[tuple[int], np.uint8]      # 1DArray
-type Matrix = np.ndarray[tuple[int, int], np.uint8] # 2DArray
+type Vector = np.ndarray[tuple[int], np.uint8]        # 1DArray
+type Matrix = np.ndarray[tuple[int, int], np.uint8]   # 2DArray
+type MatrixPoly = np.ndarray[tuple[int, int], object] # 2DArray
 
 def int_to_bit_vector(n: int, coords: int) -> Vector:
     """Converts an integer into a vector over GF(2) with a specified number of coordinates."""
@@ -130,50 +131,70 @@ def matrix_equation_gf2(mat: Matrix) -> tuple[int, int]:
     # To evaluate them on a vector represented as an integer ===> (vec & zeros) == 0 and ((vec & equation).bit_count() & 1) == 0
     return (zeros, equation)
 
-# This algorithm is not suitable for large matrices, such as the Mersenne Twister matrix.
-# However, for 128-bit (or even 256-bit) PRNG matrices, which are relatively small and empty, this algo is quite fast.
-def matrix_charpoly_gf2(mat: Matrix) -> int:
+def matrix_det_gf2x(mat: MatrixPoly, in_place: bool = False, max_degree: int = -1) -> int:
     """
-    Computes the characteristic polynomial of the given matrix over GF(2).
+    Computes the determinant of the given matrix over GF(2)[X].
     
     The algorithm uses successive polynomial divisions and subtractions (like in the Euclid's algorithm) to nullify all coefficients above the main diagonal.
     
     At the end, the matrix is triangular and its determinant can be calculated by multiplying the coefficients on the main diagonal.
+
+    The `max_degree` parameter aims to ensure that the coefficients do not exceed this degree during the calculations.
     """
     n = mat.shape[0]    
     assert n == mat.shape[1], "The matrix must be square."
 
-    # P =  mat - xI
-    P = (mat & 1).tolist()
+    P = mat.copy() if not in_place else mat
+
+    if max_degree != -1:
+        # To make computations modulo x^(max_degree + 1) more quickly
+        mask = (1 << (max_degree + 1)) - 1
+
+        # The `poly_mul_skip_gf2` function can output polynomials of degree <= `2 * max_degree`, assuming the initial coefficients have a degree <= `max_degree`.
+        # This temporary degree overflow is compensated by the function's speed and the modular reduction of the result using a bitmask.
+        poly_mul = lambda f, g: poly_mul_skip_gf2(f, g) & mask
+    else:
+        poly_mul = poly_mul_skip_gf2
+
+    det = 1
+
     for i in range(n):
-        P[i][i] ^= 2
-
-    # To make computations modulo x^(n + 1) easier
-    mask = (1 << (n + 1)) - 1
-
-    charpoly = 1
-
-    for i in range(n):
-        pivot = next(j for j in range(i, n) if P[i][j] != 0) # pivot guaranteed
+        pivot = next((j for j in range(i, n) if P[i, j]), None)
+        if pivot is None:
+            return 0
         for j in range(pivot + 1, n):
-            if P[i][j] == 0:
+            if P[i, j] == 0:
                 continue
 
-            x, y = (pivot, j) if P[i][pivot] >= P[i][j] else (j, pivot)
-            while P[i][x] and P[i][y]:
-                q, P[i][x] = poly_divmod_gf2(P[i][x], P[i][y])
+            x, y = (pivot, j) if P[i, pivot] >= P[i, j] else (j, pivot)
+
+            while P[i, x] and P[i, y]:
+                q, P[i, x] = poly_divmod_gf2(P[i, x], P[i, y])
                 for k in range(i + 1, n):
-                    P[k][x] ^= poly_mul_skip_gf2(P[k][y], q) & mask
+                    P[k, x] ^= poly_mul(P[k, y], q)
                 x, y = y, x
 
-            if P[i][pivot] == 0:
+            if P[i, pivot] == 0:
                 pivot = j
 
         if pivot != i:
             # swap columns
-            for j in range(i, n):
-                P[j][i], P[j][pivot] = P[j][pivot], P[j][i]
+            P[i:n, [i, pivot]] = P[i:n, [pivot, i]]
 
-        charpoly = poly_mul_skip_gf2(charpoly, P[i][i]) & mask
+        det = poly_mul(det, P[i, i])
 
-    return charpoly
+    return det
+
+def matrix_charpoly_gf2(mat: Matrix):
+    """Computes the characteristic polynomial of the given matrix."""
+    n = mat.shape[0]
+    assert n == mat.shape[1], "The matrix must be square."
+
+    # conversion from GF(2) to GF(2)[X]
+    P = mat.astype(object)
+
+    # P - xI
+    for i in range(n):
+        P[i, i] ^= 2
+
+    return matrix_det_gf2x(P, True, n)
