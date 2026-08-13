@@ -1,6 +1,6 @@
 from typing import Sequence
-from Matrix_GF2 import *
-from Polynomial_GF2 import poly_pow_mod_gf2
+from GF2_Matrix import *
+from GF2_Polynomial import gf2x_pow_mod
 
 def rotl(n: int, k: int) -> int:
     return ((n << k) | (n >> (64 - k))) & 0xffffffffffffffff
@@ -68,7 +68,7 @@ def xoroshiro128plus_128_lsb_sequence(state128: int) -> int:
 
 # intervals = [0, 11, 7, ...]
 # f = lambda vec: xorshift128_bdsp_blinks(vec, intervals)
-# mat = function_to_matrix_gf2(f, len(intervals) * 4, 128)
+# mat = gf2mat_from_func(f, len(intervals) * 4, 128)
 # check if rank(mat) == 128 to determine if there is a unique solution
 # g_inv = matrix_generalized_inverse_gf2(mat)
 def xorshift128_bdsp_blinks(state128: int, intervals: Sequence[int]) -> int:
@@ -100,65 +100,94 @@ def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int, bits_slice: S
         fmt = lambda a: f"0x{a:0{hex_size}x}"
 
     for i in range(axis_length):
-        a = bit_vector_to_int(get_axis(i))
+        a = gf2vec_to_int(get_axis(i))
         print(fmt(a), end = "\n" if i == axis_length - 1 else ", " if (i + 1) % per_line else ",\n")
 
-def print_jump_table_in_hex(apoly: int, size: int, per_line: int, bits_slice: Sequence[int] = None):
+def print_jump_table_in_hex(charpoly: int, size: int, per_line: int, bits_slice: Sequence[int] = None):
     if bits_slice:
-        assert sum(bits_slice) == apoly.bit_length() - 1
+        assert sum(bits_slice) == charpoly.bit_length() - 1
         hex_size = [(b + 3) >> 2 for b in bits_slice]
         mask = [(1 << b) - 1 for b in bits_slice]
         shift = [sh := 0] + [sh := sh + b for b in bits_slice[:-1]]
         fmt = lambda p: "({})".format(", ".join(f"0x{(p >> s) & m:0{h}x}" for s, m, h in zip(shift, mask, hex_size)))
     else:
-        hex_size = (apoly.bit_length() - 1 + 3) >> 2
+        hex_size = (charpoly.bit_length() - 1 + 3) >> 2
         fmt = lambda p: f"0x{p:0{hex_size}x}"
 
     for i in range(size):
-        p = poly_pow_mod_gf2(2, 1 << i, apoly)
+        p = gf2x_pow_mod(2, 1 << i, charpoly)
         print(fmt(p), end = "\n" if i == size - 1 else ", " if (i + 1) % per_line else ",\n")
 
 if __name__ == "__main__":
+    import sys, os
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+    from RNG import MT, TinyMT, SFMT, Xoroshiro128Plus, Xorshift128
+    from GF2_Polynomial import gf2_berlekamp_massey
+
     '''
-    mat = function_to_matrix_gf2(tinymt_next, 128, 128)
-    charpoly = matrix_charpoly_gf2(mat)
-    print(hex(charpoly)) # 0x1b0a48045db1bfe951b98a18f31f57486
-    eq = matrix_equation_gf2(mat)
-    print(hex(eq[0]), hex(eq[1])) # 0x0 0x3fffffffffffff8000000080000000
+    rng = MT(0xdeadbeef)
+    bits = [rng.next_u32() & 1 for _ in range(624 * 32 * 2)]
+    charpoly = gf2_berlekamp_massey(bits)
+    path = os.path.join(os.path.dirname(__file__), "charpoly_mt.txt")
+    with open(path, "w") as file:
+        file.write(hex(charpoly))
     '''
 
     '''
-    mat = function_to_matrix_gf2(xoroshiro128plus_next, 128, 128)
-    charpoly = matrix_charpoly_gf2(mat)
+    rng = TinyMT(0xdeadbeef)
+    bits = [rng.next_u32() & 1 for _ in range(127 * 2)]
+    M = gf2mat_from_func(tinymt_next, 128, 128)
+    charpoly = gf2_berlekamp_massey(bits)
+    zeros, eq = gf2mat_constraints(M)
+    print(hex(charpoly)) # 0xd8524022ed8dff4a8dcc50c798faba43
+    print(hex(zeros), hex(eq)) # 0x0 0x3fffffffffffff8000000080000000
+    '''
+
+    '''
+    rng = SFMT(0xdeadbeef)
+    bits = []
+    for _ in range(2 * 32 * 4):
+        rng.twist()
+        for i in range(0, 624, 4):
+            bits.append(rng.state[i] & 1)
+    charpoly = gf2_berlekamp_massey(bits)
+    path = os.path.join(os.path.dirname(__file__), "charpoly_sfmt.txt")
+    with open(path, "w") as file:
+        file.write(hex(charpoly))
+    '''
+
+    '''
+    rng = Xoroshiro128Plus(0xdeadbeef)
+    bits = [rng.next_u64() & 1 for _ in range(128 * 2)]
+    charpoly = gf2_berlekamp_massey(bits)
     print(hex(charpoly)) # 0x10008828e513b43d5095b8f76579aa001
     '''
 
     '''
-    mat = function_to_matrix_gf2(xorshift128_next, 128, 128)
-    charpoly = matrix_charpoly_gf2(mat)
+    rng = Xorshift128(0xdeadbeef)
+    bits = [rng.next() & 1 for _ in range(128 * 2)]
+    charpoly = gf2_berlekamp_massey(bits)
     print(hex(charpoly)) # 0x1000000010046d8b3f985d65ffd3c8001
     '''
 
-    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486, 127, 3)
-
-    # The characteristic polynomial of the TinyMT can be factored by the monomial x to obtain an annihilating polynomial of lower degree.
-    #print_jump_table_in_hex(0x1b0a48045db1bfe951b98a18f31f57486 >> 1, 127, 3)
+    #print_jump_table_in_hex(0xd8524022ed8dff4a8dcc50c798faba43, 127, 3)
 
     #print_jump_table_in_hex(0x10008828e513b43d5095b8f76579aa001, 128, 3)
 
     #print_jump_table_in_hex(0x1000000010046d8b3f985d65ffd3c8001, 128, 3)
 
     '''
-    B = function_to_matrix_gf2(tinymt_127_lsb_sequence, 127, 128)
+    B = gf2mat_from_func(tinymt_127_lsb_sequence, 127, 128)
     B = np.delete(B, 31, 1) # delete the 31st column to make the matrix invertible
-    N = function_to_matrix_gf2(tinymt_next, 128, 128)
-    A = matrix_pow_gf2(N, 124)
+    N = gf2mat_from_func(tinymt_next, 128, 128)
+    A = gf2mat_pow(N, 124)
     A = np.delete(A, 31, 1) # delete the 31st column to make the product between A and B^-1 consistent
-    P = (A @ matrix_inverse_gf2(B)) & 1
+    P = (A @ gf2mat_inverse(B)) & 1
     print_bit_matrix_in_hex(P, 1, 2, [32, 32, 32, 32])
     '''
 
-    B = function_to_matrix_gf2(xoroshiro128plus_128_lsb_sequence, 128, 128)
-    N = function_to_matrix_gf2(xoroshiro128plus_next, 128, 128)
-    P = (matrix_pow_gf2(N, 128) @ matrix_inverse_gf2(B)) & 1
+    B = gf2mat_from_func(xoroshiro128plus_128_lsb_sequence, 128, 128)
+    N = gf2mat_from_func(xoroshiro128plus_next, 128, 128)
+    P = (gf2mat_pow(N, 128) @ gf2mat_inverse(B)) & 1
     print_bit_matrix_in_hex(P, 1, 2, [64, 64])

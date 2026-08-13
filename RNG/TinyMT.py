@@ -73,7 +73,7 @@ class TinyMT:
         
         However, the current state reveals 127 bits of the previous state.
         
-        Then we can recover the last bit by checking if the obtained state/vector lives in the TinyMT's vector space thanks to it's equation.
+        Then we can recover the last bit by checking if the obtained state/vector lives in the TinyMT's vector space thanks to it's cartesian equation.
         """
         if self.s3 & 1:
             self.s1 ^= 0x8F7011EE

@@ -1,18 +1,18 @@
-# Polynomials over GF(2) can be encoded as positive integers where each bit is a coefficient.
+# Polynomials over GF(2), formally written as GF(2)[X], can be encoded as positive integers where each bit is a coefficient.
 # For example: x^3 + x^2 + 1 can be represented as 0b1101 = 13.
 # Then we can implement arithmetic operations on them using bitwise operators.
 
-from typing import Iterator
+from typing import Iterator, Sequence
 from math import isqrt
 
-def poly_deg_gf2(f: int) -> int:
+def gf2x_deg(f: int) -> int:
     """Returns the degree of f(x)."""
     return f.bit_length() - 1
 
-def poly_mul_gf2(f: int, g: int) -> int:    
+def gf2x_mul(f: int, g: int) -> int:    
     """Calculates f(x) * g(x)."""
+    # f > g implies f.bit_length() >= g.bit_length()
     if f > g:
-        # f > g implies f.bit_length() >= g.bit_length()
         f, g = g, f
 
     res = 0
@@ -25,7 +25,7 @@ def poly_mul_gf2(f: int, g: int) -> int:
 
     return res
 
-def poly_mul_skip_gf2(f: int, g: int) -> int:
+def gf2x_mul_skip(f: int, g: int) -> int:
     """Calculates f(x) * g(x) by skipping zeros."""
     if f.bit_count() > g.bit_count():
         f, g = g, f
@@ -39,16 +39,16 @@ def poly_mul_skip_gf2(f: int, g: int) -> int:
 
     return res
 
-def poly_prod_gf2(*args: int) -> int:
+def gf2x_prod(*args: int) -> int:
     """Calculates the product of the polynomials passed as arguments."""
     p = 1
 
     for f in args:
-        p = poly_mul_skip_gf2(p, f)
+        p = gf2x_mul_skip(p, f)
 
     return p
 
-def poly_square_gf2(f: int):
+def gf2x_square(f: int):
     """Calculates the square of f(x)."""
     res = 0
 
@@ -59,19 +59,19 @@ def poly_square_gf2(f: int):
 
     return res
 
-def poly_pow_gf2(f: int, n: int) -> int:
+def gf2x_pow(f: int, n: int) -> int:
     """Calculates f(x) raised to the power of n using binary exponentiation."""
     res = 1
 
     while n:
         if n & 1:
-            res = poly_mul_skip_gf2(res, f)
-        f = poly_square_gf2(f)
+            res = gf2x_mul_skip(res, f)
+        f = gf2x_square(f)
         n >>= 1
 
     return res
 
-def poly_divmod_gf2(f: int, g: int) -> tuple[int, int]:
+def gf2x_divmod(f: int, g: int) -> tuple[int, int]:
     """Calculates the quotient and the remainder in the Euclidean divison of f(x) by g(x)."""
     assert g != 0, "division by zero"
 
@@ -87,11 +87,11 @@ def poly_divmod_gf2(f: int, g: int) -> tuple[int, int]:
 
     return (q, f)
 
-def poly_div_gf2(f: int, g: int) -> int:
+def gf2x_div(f: int, g: int) -> int:
     """Calculates the quotient in the Euclidean divison of f(x) by g(x)."""
-    return poly_divmod_gf2(f, g)[0]
+    return gf2x_divmod(f, g)[0]
 
-def poly_mod_gf2(f: int, m: int) -> int:
+def gf2x_mod(f: int, m: int) -> int:
     """Calculates the remainder in the Euclidean divison of f(x) by m(x)."""
     assert m != 0, "modulo by zero"
 
@@ -104,17 +104,17 @@ def poly_mod_gf2(f: int, m: int) -> int:
 
     return f
 
-def poly_mul_mod_gf2(f: int, g: int, m: int) -> int:
+def gf2x_mul_mod(f: int, g: int, m: int) -> int:
     """Calculates f(x) * g(x) modulo m(x)."""
-    f = poly_mod_gf2(f, m)
-    g = poly_mod_gf2(g, m)
-    p = poly_mul_skip_gf2(f, g)
-    return poly_mod_gf2(p, m)
+    f = gf2x_mod(f, m)
+    g = gf2x_mod(g, m)
+    fg = gf2x_mul_skip(f, g)
+    return gf2x_mod(fg, m)
 
-def poly_bounded_mul_mod_gf2(f: int, g: int, m: int) -> int:
+def gf2x_bounded_mul_mod(f: int, g: int, m: int) -> int:
     """Calculates f(x) * g(x) modulo m(x) by immediately reducing the partial product to prevent bit lengths from exceeding the length of m(x)."""        
-    f = poly_mod_gf2(f, m)
-    g = poly_mod_gf2(g, m)
+    f = gf2x_mod(f, m)
+    g = gf2x_mod(g, m)
 
     if f > g:
         f, g = g, f
@@ -135,32 +135,32 @@ def poly_bounded_mul_mod_gf2(f: int, g: int, m: int) -> int:
 
     return res
 
-def poly_pow_mod_gf2(f: int, n: int, m: int) -> int:
+def gf2x_pow_mod(f: int, n: int, m: int) -> int:
     """Calculates f^n(x) modulo m(x) using binary exponentiation."""
-    f = poly_mod_gf2(f, m)
+    f = gf2x_mod(f, m)
     res = 1
 
     while n:
         if n & 1:
-            res = poly_mod_gf2(poly_mul_skip_gf2(res, f), m)
-        f = poly_mod_gf2(poly_square_gf2(f), m)
+            res = gf2x_mod(gf2x_mul_skip(res, f), m)
+        f = gf2x_mod(gf2x_square(f), m)
         n >>= 1
 
     return res
 
-def poly_gcd_gf2(f: int, g: int) -> int:
+def gf2x_gcd(f: int, g: int) -> int:
     """Calculates the Greatest Common Divisor of f(x) and g(x) using Euclid's algorithm."""
     while g:
-        f, g = g, poly_mod_gf2(f, g)
+        f, g = g, gf2x_mod(f, g)
     return f
 
-def poly_lcm_gf2(f: int, g: int) -> int:
+def gf2x_lcm(f: int, g: int) -> int:
     """Calculates the Least Common Multiple of f(x) and g(x)."""
-    gcd = poly_gcd_gf2(f, g)
-    div = poly_div_gf2(g, gcd)
-    return poly_mul_gf2(f, div)
+    gcd = gf2x_gcd(f, g)
+    div = gf2x_div(g, gcd)
+    return gf2x_mul_skip(f, div)
 
-def poly_egcd_gf2(f: int, g: int) -> tuple[int, int, int]:
+def gf2x_egcd(f: int, g: int) -> tuple[int, int, int]:
     """Calculates a(x), b(x) and d(x) such that af(x) + bg(x) = d(x) = gcd(f(x), g(x)) using the extended Euclidean algorithm."""
     if g == 0:
         return (int(f != 0), 0, f)
@@ -169,19 +169,19 @@ def poly_egcd_gf2(f: int, g: int) -> tuple[int, int, int]:
     prev_a, a = 1, 0
 
     while d:
-        q, d_ = poly_divmod_gf2(prev_d, d)
+        q, d_ = gf2x_divmod(prev_d, d)
         prev_d, d = d, d_
-        prev_a, a = a, prev_a ^ poly_mul_gf2(q, a)
+        prev_a, a = a, prev_a ^ gf2x_mul_skip(q, a)
 
-    prev_b = poly_div_gf2(prev_d ^ poly_mul_gf2(prev_a, f), g)
+    prev_b = gf2x_div(prev_d ^ gf2x_mul_skip(prev_a, f), g)
 
     return (prev_a, prev_b, prev_d)
 
-def poly_mod_inv_gf2(f: int, m: int) -> int:
+def gf2x_mod_inv(f: int, m: int) -> int:
     """Calculates the modular multiplicative inverse of f(x) modulo m(x)."""
-    inv, _, gcd = poly_egcd_gf2(f, m)
-    assert gcd == 1, "f(x) and m(x) must be relatively prime over GF(2)."
-    return poly_mod_gf2(inv, m)
+    inv, _, gcd = gf2x_egcd(f, m)
+    assert gcd == 1, "f(x) and m(x) must be relatively prime over GF(2)[X]."
+    return gf2x_mod(inv, m)
 
 def distinct_primes(n: int) -> Iterator[int]:   
     """Yields the distinct prime factors of the given integer using iterative division."""
@@ -212,20 +212,45 @@ def distinct_primes(n: int) -> Iterator[int]:
     if n != 1:
         yield n
 
-def poly_irreducibility_gf2(f: int) -> bool:
+def gf2x_is_irreducible(f: int) -> bool:
     """Checks if the polynomial f(x) is irreducible using Rabin's algorithm."""
     if f <= 3:
         return f == 2 or f == 3
 
     # all irreductible polynomials of degree >= 2 are congruent to 1 modulo x^2 + x
-    if poly_mod_gf2(f, 6) != 1:
+    if gf2x_mod(f, 6) != 1:
         return False
 
-    d = poly_deg_gf2(f)
+    d = gf2x_deg(f)
 
     for p in distinct_primes(d):
-        g = poly_pow_mod_gf2(2, 1 << (d // p), f)
-        if poly_gcd_gf2(f, g ^ 2) != 1:
+        g = gf2x_pow_mod(2, 1 << (d // p), f)
+        if gf2x_gcd(f, g ^ 2) != 1:
             return False
 
-    return poly_pow_mod_gf2(2, 1 << d, f) == 2
+    return gf2x_pow_mod(2, 1 << d, f) == 2
+
+def gf2_berlekamp_massey(bits: Sequence[int]) -> int:
+    """Calculates the shortest linear-feedback shift register (LFSR) for a given binary output sequence."""
+    C = B = m = 1
+    L = mask = 0
+
+    for n, i in enumerate(range(len(bits) - 1, -1, -1)):
+        d = bits[i] ^ ((C >> 1) & mask).bit_count() & 1
+        mask = (mask << 1) | bits[i]
+
+        if d == 0:
+            m += 1
+            continue
+
+        T = C
+        C ^= B << m
+
+        if 2 * L <= n:
+            L = n + 1 - L
+            B = T
+            m = 1
+        else:
+            m += 1
+
+    return C

@@ -1,31 +1,31 @@
 import numpy as np
 from typing import Callable
 from itertools import chain
-from Polynomial_GF2 import poly_mul_skip_gf2, poly_divmod_gf2
+from GF2_Polynomial import gf2x_mul_skip, gf2x_divmod
 
 type Vector = np.ndarray[tuple[int], np.uint8]        # 1DArray
 type Matrix = np.ndarray[tuple[int, int], np.uint8]   # 2DArray
 type MatrixPoly = np.ndarray[tuple[int, int], object] # 2DArray
 
-def int_to_bit_vector(n: int, coords: int) -> Vector:
-    """Converts an integer into a vector over GF(2) with a specified number of coordinates."""
+def gf2vec_from_int(n: int, coords: int) -> Vector:
+    """Generates a GF(2) vector from the binary representation of the given integer and a specified number of coordinates."""
     return np.array([(n >> i) & 1 for i in range(coords)], np.uint8)
 
-def bit_vector_to_int(vec: Vector) -> int:
-    """Converts a GF(2) vector into an integer."""
+def gf2vec_to_int(vec: Vector) -> int:
+    """Converts a GF(2) vector into its corresponding integer value via binary decoding."""
     return sum((int(b) & 1) << i for i, b in enumerate(vec))
 
-def function_to_matrix_gf2(f: Callable[[int], int], row: int, col: int) -> Matrix:
-    """Returns the function f encoded as a matrix, assuming f is linear over GF(2)."""
+def gf2mat_from_func(f: Callable[[int], int], row: int, col: int) -> Matrix:
+    """Returns the matrix representation of the function f, assuming f is linear over GF(2)"""
     mat = np.zeros((row, col), np.uint8)
 
     for i in range(col):
         im = f(1 << i) # images of the canonical basis by the function f
-        mat[:, i] = int_to_bit_vector(im, row)
+        mat[:, i] = gf2vec_from_int(im, row)
 
     return mat
 
-def matrix_reduced_row_echelon_form_gf2(mat: Matrix) -> tuple[Matrix, list[int], int]:
+def gf2mat_reduced_row_echelon_form(mat: Matrix) -> tuple[Matrix, list[int], int]:
     """Computes the reduced row echelon form, the list of elementary operations required to obtain it, and the rank of the given matrix."""
     row, col = mat.shape
     reduced = mat & 1 # mat's copy
@@ -52,32 +52,32 @@ def matrix_reduced_row_echelon_form_gf2(mat: Matrix) -> tuple[Matrix, list[int],
 
     return (reduced, operations, pr)
 
-def matrix_inverse_gf2(mat: Matrix) -> Matrix:
+def gf2mat_inverse(mat: Matrix) -> Matrix:
     """Computes the inverse of the given matrix."""
     n = mat.shape[0]
     assert n == mat.shape[1], "The matrix must be square."
 
-    _, operations, rank = matrix_reduced_row_echelon_form_gf2(mat)
+    _, operations, rank = gf2mat_reduced_row_echelon_form(mat)
     assert rank == n, f"The matrix is not full rank ({rank = } while {n = })."
 
     inv = np.zeros((n, n), np.uint8)
 
     for i in range(n):
-        inv[i] = int_to_bit_vector(operations[i], n)
+        inv[i] = gf2vec_from_int(operations[i], n)
 
     return inv
 
-def matrix_generalized_inverse_gf2(mat: Matrix) -> Matrix:
+def gf2mat_generalized_inverse(mat: Matrix) -> Matrix:
     """Computes a generalized inverse of the given matrix."""
     row, col = mat.shape
-    reduced, operations, rank = matrix_reduced_row_echelon_form_gf2(mat)
+    reduced, operations, rank = gf2mat_reduced_row_echelon_form(mat)
 
     pivot = 0
     swaps = []
     g_inv = np.zeros((col, row), np.uint8)
 
     for i in range(rank):
-        g_inv[i] = int_to_bit_vector(operations[i], row)     
+        g_inv[i] = gf2vec_from_int(operations[i], row)     
         while reduced[i, pivot] == 0:
             pivot += 1
         if pivot != i:
@@ -89,20 +89,20 @@ def matrix_generalized_inverse_gf2(mat: Matrix) -> Matrix:
 
     return g_inv
 
-def matrix_kernel_gf2(mat: Matrix) -> Matrix:
+def gf2mat_kernel(mat: Matrix) -> Matrix:
     """Computes a basis for the kernel of the given matrix."""
     col = mat.shape[1]
-    _, operations, rank = matrix_reduced_row_echelon_form_gf2(mat.T)
+    _, operations, rank = gf2mat_reduced_row_echelon_form(mat.T)
 
     ker = np.zeros((col, col - rank), np.uint8)
 
     for c, i in enumerate(range(rank, col)):
-        ker[:, c] = int_to_bit_vector(operations[i], col)
+        ker[:, c] = gf2vec_from_int(operations[i], col)
 
     return ker
 
-def matrix_pow_gf2(mat: Matrix, n: int) -> Matrix: 
-    """Computes the given matrix raised to the power of n, using binary exponentiation."""
+def gf2mat_pow(mat: Matrix, n: int) -> Matrix: 
+    """Computes the given matrix raised to the power of n using binary exponentiation."""
     assert mat.shape[0] == mat.shape[1], "The matrix must be square."
 
     base = mat & 1 # mat's copy
@@ -116,9 +116,9 @@ def matrix_pow_gf2(mat: Matrix, n: int) -> Matrix:
 
     return res
 
-def matrix_equation_gf2(mat: Matrix) -> tuple[int, int]:   
-    """Computes the zeros and the equation to check if a vector lives in the column space of the given matrix."""
-    _, terms, rank = matrix_reduced_row_echelon_form_gf2(mat)
+def gf2mat_constraints(mat: Matrix) -> tuple[int, int]:   
+    """Computes the constraints to check if a vector lives in the column space of the given matrix."""
+    _, terms, rank = gf2mat_reduced_row_echelon_form(mat)
 
     zeros = equation = 0
 
@@ -128,10 +128,11 @@ def matrix_equation_gf2(mat: Matrix) -> tuple[int, int]:
         else:
             equation ^= terms[i]
 
-    # To evaluate them on a vector represented as an integer ===> (vec & zeros) == 0 and ((vec & equation).bit_count() & 1) == 0
+    # These constraints can be checked using bitmasks and a XOR sum over a vector represented as an integer.
+    # Like this: (vec & zeros) == 0 and ((vec & equation).bit_count() & 1) == 0
     return (zeros, equation)
 
-def matrix_det_gf2x(mat: MatrixPoly, in_place: bool = False, max_degree: int = -1) -> int:
+def gf2xmat_det(mat: MatrixPoly, in_place: bool = False, max_degree: int = -1) -> int:
     """
     Computes the determinant of the given matrix over GF(2)[X].
     
@@ -150,11 +151,11 @@ def matrix_det_gf2x(mat: MatrixPoly, in_place: bool = False, max_degree: int = -
         # To make computations modulo x^(max_degree + 1) more quickly
         mask = (1 << (max_degree + 1)) - 1
 
-        # The `poly_mul_skip_gf2` function can output polynomials of degree <= `2 * max_degree`, assuming the initial coefficients have a degree <= `max_degree`.
+        # The `gf2x_mul_skip` function can output polynomials of degree <= `2 * max_degree`, assuming the initial coefficients have a degree <= `max_degree`.
         # This temporary degree overflow is compensated by the function's speed and the modular reduction of the result using a bitmask.
-        poly_mul = lambda f, g: poly_mul_skip_gf2(f, g) & mask
+        poly_mul = lambda f, g: gf2x_mul_skip(f, g) & mask
     else:
-        poly_mul = poly_mul_skip_gf2
+        poly_mul = gf2x_mul_skip
 
     det = 1
 
@@ -169,7 +170,7 @@ def matrix_det_gf2x(mat: MatrixPoly, in_place: bool = False, max_degree: int = -
             x, y = (pivot, j) if P[i, pivot] >= P[i, j] else (j, pivot)
 
             while P[i, x] and P[i, y]:
-                q, P[i, x] = poly_divmod_gf2(P[i, x], P[i, y])
+                q, P[i, x] = gf2x_divmod(P[i, x], P[i, y])
                 for k in range(i + 1, n):
                     P[k, x] ^= poly_mul(P[k, y], q)
                 x, y = y, x
@@ -185,7 +186,7 @@ def matrix_det_gf2x(mat: MatrixPoly, in_place: bool = False, max_degree: int = -
 
     return det
 
-def matrix_charpoly_gf2(mat: Matrix) -> int:
+def gf2mat_charpoly(mat: Matrix) -> int:
     """Computes the characteristic polynomial of the given matrix."""
     n = mat.shape[0]
     assert n == mat.shape[1], "The matrix must be square."
@@ -197,4 +198,4 @@ def matrix_charpoly_gf2(mat: Matrix) -> int:
     for i in range(n):
         P[i, i] ^= 2
 
-    return matrix_det_gf2x(P, True, n)
+    return gf2xmat_det(P, True, n)
