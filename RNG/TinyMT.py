@@ -101,9 +101,9 @@ class TinyMT:
         self.s3 = y
         self.s0 ^= x ^ self.s2
 
-        # Evaluation of the equation
+        # Evaluation of the cartesian equation
         eq = (self.s0 >> 31) ^ (self.s1 >> 31) ^ self.s2.bit_count() ^ (self.s3 & 0x3fffff).bit_count()
-        if (eq & 1) != 0:
+        if eq & 1:
             self.s0 ^= 0x80000000
 
     def next_u32(self) -> int:
