@@ -1,6 +1,6 @@
 from typing import Sequence
 
-# https://github.com/StarfBerry/PokeRNG/blob/cde9cb76efadbee47c2231d72913290a489d798e/Math/GF2_Computation.py#L144
+# https://github.com/StarfBerry/PokeRNG/blob/193dd76a606014fe27d5d6e80ca5d12b4fd4e84c/Math/GF2_Computation.py#L122-L123
 def tinymt_equation(s0: int, s1: int, s2: int, s3: int) -> int:
     """Equation to check if a state can be generated from the recurrence relation of TinyMT."""
     eq = (s0 >> 31) ^ (s1 >> 31) ^ s2.bit_count() ^ (s3 & 0x3fffff).bit_count()
@@ -83,7 +83,7 @@ def tinymt_recover_state_from_127_lsb_sequence(bits: Sequence[int]) -> tuple[int
 
     return (s0, s1, s2, s3)
 
-# https://github.com/StarfBerry/PokeRNG/blob/cde9cb76efadbee47c2231d72913290a489d798e/Math/GF2_Computation.py#L181-L187
+# https://github.com/StarfBerry/PokeRNG/blob/193dd76a606014fe27d5d6e80ca5d12b4fd4e84c/Math/GF2_Computation.py#L161-L167
 TINYMT_127_LSB_INV_X_ADVC_124 = (
     (0x5bad2a66, 0x680d9666, 0x78978f33, 0x48fc5d16), (0x90acdb77, 0x33a0bc00, 0x109a1955, 0xc916aed0),
     (0xe5135044, 0x90acdb77, 0x33a0bc00, 0xfddaa506), (0x42ac1733, 0xe5135044, 0x90acdb77, 0xc74bfe04),

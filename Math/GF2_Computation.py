@@ -60,7 +60,7 @@ def xorshift128_bdsp_blinks(state128: int, intervals: Sequence[int]) -> int:
         rng.advance(intervals[i])
         # blink = rand(16) <= 1 <==> state[3] & 0xf <= 1 (0 for double, 1 for single)
         # When state[3] == 0xffff_ffff, the equivalence above no longer holds due to a modulo operation by 0xffff_ffff
-        # https://github.com/StarfBerry/PokeRNG/blob/f7c8934159efee43b06b8a2a42085550995d35cc/RNG/Xorshift.py#L64-L67
+        # https://github.com/StarfBerry/PokeRNG/blob/193dd76a606014fe27d5d6e80ca5d12b4fd4e84c/RNG/Xorshift.py#L64
         b = rng.s3 & 0xf
         bits |= b << (4 * i)
     return bits

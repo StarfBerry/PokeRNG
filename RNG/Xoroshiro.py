@@ -109,7 +109,7 @@ class XoroshiroBDSP(Xoroshiro128Plus):
     def rand(self, maximum: int) -> int:
         return self.next_u32() % maximum
 
-# https://github.com/StarfBerry/PokeRNG/blob/cde9cb76efadbee47c2231d72913290a489d798e/Math/GF2_Computation.py#L176
+# https://github.com/StarfBerry/PokeRNG/blob/193dd76a606014fe27d5d6e80ca5d12b4fd4e84c/Math/GF2_Computation.py#L156
 XOROSHIRO_JUMP_TABLE = (
     0x00000000000000000000000000000002, 0x00000000000000000000000000000004, 0x00000000000000000000000000000010,
     0x00000000000000000000000000000100, 0x00000000000000000000000000010000, 0x00000000000000000000000100000000,
