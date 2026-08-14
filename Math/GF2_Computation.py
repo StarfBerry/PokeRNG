@@ -7,7 +7,7 @@ sys.path.append(os.path.join(PATH, ".."))
 from RNG import MT, TinyMT, SFMT, Xoroshiro128Plus, Xorshift128
 
 from GF2_Matrix import *
-from GF2_Polynomial import gf2x_pow_mod, gf2_berlekamp_massey
+from GF2_Polynomial import *
 
 def tinymt_next(state128: int) -> int:
     # to bypass the period certification
@@ -109,7 +109,7 @@ def print_jump_table_in_hex(charpoly: int, size: int, per_line: int, bits_slice:
 if __name__ == "__main__":
     '''
     rng = MT(0xdeadbeef)
-    bits = [rng.next_u32() & 1 for _ in range(624 * 32 * 2)]
+    bits = [rng.next_u32() & 1 for _ in range((624 * 32 - 31) * 2)]
     charpoly = gf2_berlekamp_massey(bits)
     path = os.path.join(PATH, "charpoly_mt.txt")
     with open(path, "w") as file:
