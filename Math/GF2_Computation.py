@@ -10,7 +10,8 @@ from GF2_Matrix import *
 from GF2_Polynomial import gf2x_pow_mod, gf2_berlekamp_massey
 
 def tinymt_next(state128: int) -> int:
-    if state128 == 0x8000_0000:
+    # to bypass the period certification
+    if state128 == 0 or state128 == 0x80000000:
         return 0
     state = [(state128 >> (32 * i)) & 0xffff_ffff for i in range(4)]
     rng = TinyMT(state)
@@ -27,7 +28,8 @@ def xoroshiro128plus_next(state128: int) -> int:
     return (s1 << 64) | s0
 
 def tinymt_127_lsb_sequence(state128: int) -> int:
-    if state128 == 0x8000_0000:
+    # to bypass the period certification
+    if state128 == 0 or state128 == 0x80000000:
         return 0
     state = [(state128 >> (32 * i)) & 0xffff_ffff for i in range(4)]
     rng = TinyMT(state)
