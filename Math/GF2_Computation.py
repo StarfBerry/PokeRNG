@@ -1,69 +1,50 @@
+import sys, os
 from typing import Sequence
-from GF2_Matrix import *
-from GF2_Polynomial import gf2x_pow_mod
 
-def rotl(n: int, k: int) -> int:
-    return ((n << k) | (n >> (64 - k))) & 0xffffffffffffffff
+PATH = os.path.dirname(__file__)
+
+sys.path.append(os.path.join(PATH, ".."))
+from RNG import MT, TinyMT, SFMT, Xoroshiro128Plus, Xorshift128
+
+from GF2_Matrix import *
+from GF2_Polynomial import gf2x_pow_mod, gf2_berlekamp_massey
 
 def tinymt_next(state128: int) -> int:
-    s0 = state128 & 0xffffffff
-    s1 = (state128 >> 32) & 0xffffffff
-    s2 = (state128 >> 64) & 0xffffffff
-    s3 = (state128 >> 96) & 0xffffffff
-
-    x = (s0 & 0x7fffffff) ^ s1 ^ s2
-    y = s3
-
-    x ^= (x << 1) & 0xffffffff
-    y ^= (y >> 1) ^ x
-
-    s0 = s1
-    s1 = s2
-    s2 = x ^ (y << 10) & 0xffffffff
-    s3 = y
-
-    if y & 1:
-        s1 ^= 0x8F7011EE
-        s2 ^= 0xFC78FF1F
-
+    if state128 == 0x8000_0000:
+        return 0
+    state = [(state128 >> (32 * i)) & 0xffff_ffff for i in range(4)]
+    rng = TinyMT(state)
+    rng.twist()
+    s0, s1, s2, s3 = rng.state
     return (s3 << 96) | (s2 << 64) | (s1 << 32) | s0
 
 def xoroshiro128plus_next(state128: int) -> int:
-    s0 = state128 & 0xffffffffffffffff
-    s1 = (state128 >> 64) ^ s0
-
-    s0 = rotl(s0, 24) ^ s1 ^ (s1 << 16) & 0xffffffffffffffff
-    s1 = rotl(s1, 37)
-
+    s0 = state128 & 0xffff_ffff_ffff_ffff
+    s1 = state128 >> 64
+    rng = Xoroshiro128Plus(s0, s1)
+    rng.next_state()
+    s0, s1 = rng.state
     return (s1 << 64) | s0
 
-def xorshift128_next(state128: int) -> int:
-    s0 = state128 & 0xffffffff
-    s1 = (state128 >> 32) & 0xffffffff
-    s2 = (state128 >> 64) & 0xffffffff
-    s3 = (state128 >> 96) & 0xffffffff
-
-    t = s0 ^ (s0 << 11) & 0xffffffff
-    t ^= (t >> 8) ^ s3 ^ (s3 >> 19)
-
-    s0, s1, s2, s3 = s1, s2, s3, t
-
-    return (s3 << 96) | (s2 << 64) | (s1 << 32) | s0
-
 def tinymt_127_lsb_sequence(state128: int) -> int:
+    if state128 == 0x8000_0000:
+        return 0
+    state = [(state128 >> (32 * i)) & 0xffff_ffff for i in range(4)]
+    rng = TinyMT(state)
     bits = 0
     for i in range(127):
-        state128 = tinymt_next(state128)
-        b = (state128 >> 96) & 1 # temper(state) & 1 == state[3] & 1
+        b = rng.next_u32() & 1 # temper(state) & 1 == state[3] & 1
         bits |= b << i
     return bits
 
 def xoroshiro128plus_128_lsb_sequence(state128: int) -> int:
+    s0 = state128 & 0xffff_ffff_ffff_ffff
+    s1 = state128 >> 64
+    rng = Xoroshiro128Plus(s0, s1)
     bits = 0
     for i in range(128):
-        b = (state128 ^ (state128 >> 64)) & 1 # <==> (s0 + s1) & 1
+        b = rng.next_u64() & 1 # (s0 + s1) & 1
         bits |= b << i
-        state128 = xoroshiro128plus_next(state128)
     return bits
 
 # intervals = [0, 11, 7, ...]
@@ -72,11 +53,16 @@ def xoroshiro128plus_128_lsb_sequence(state128: int) -> int:
 # check if rank(mat) == 128 to determine if there is a unique solution
 # g_inv = matrix_generalized_inverse_gf2(mat)
 def xorshift128_bdsp_blinks(state128: int, intervals: Sequence[int]) -> int:
+    state = [(state128 >> (32 * i)) & 0xffff_ffff for i in range(4)]
+    rng = Xorshift128(state)
     bits = 0
     for i in range(len(intervals)):
-        for _ in range(intervals[i]):
-            state128 = xorshift128_next(state128)
-        bits |= ((state128 >> 96) & 0xf) << (4 * i) # blink = rand(16) <= 1 <==> state[3] & 0xf <= 1 (0 for double, 1 for single)
+        rng.advance(intervals[i])
+        # blink = rand(16) <= 1 <==> state[3] & 0xf <= 1 (0 for double, 1 for single)
+        # When state[3] == 0xffff_ffff, the equivalence above no longer holds due to a modulo operation by 0xffff_ffff
+        # https://github.com/StarfBerry/PokeRNG/blob/f7c8934159efee43b06b8a2a42085550995d35cc/RNG/Xorshift.py#L64-L67
+        b = rng.s3 & 0xf
+        bits |= b << (4 * i)
     return bits
 
 def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int, bits_slice: Sequence[int] = None):
@@ -119,17 +105,11 @@ def print_jump_table_in_hex(charpoly: int, size: int, per_line: int, bits_slice:
         print(fmt(p), end = "\n" if i == size - 1 else ", " if (i + 1) % per_line else ",\n")
 
 if __name__ == "__main__":
-    import sys, os
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-    from RNG import MT, TinyMT, SFMT, Xoroshiro128Plus, Xorshift128
-    from GF2_Polynomial import gf2_berlekamp_massey
-
     '''
     rng = MT(0xdeadbeef)
     bits = [rng.next_u32() & 1 for _ in range(624 * 32 * 2)]
     charpoly = gf2_berlekamp_massey(bits)
-    path = os.path.join(os.path.dirname(__file__), "charpoly_mt.txt")
+    path = os.path.join(PATH, "charpoly_mt.txt")
     with open(path, "w") as file:
         file.write(hex(charpoly))
     '''
@@ -137,11 +117,11 @@ if __name__ == "__main__":
     '''
     rng = TinyMT(0xdeadbeef)
     bits = [rng.next_u32() & 1 for _ in range(127 * 2)]
-    M = gf2mat_from_func(tinymt_next, 128, 128)
+    T = gf2mat_from_func(tinymt_next, 128, 128)
     charpoly = gf2_berlekamp_massey(bits)
-    zeros, eq = gf2mat_constraints(M)
+    zeros, cartesian_eq = gf2mat_constraints(T)
+    print(hex(zeros), hex(cartesian_eq)) # 0x0 0x3fffffffffffff8000000080000000
     print(hex(charpoly)) # 0xd8524022ed8dff4a8dcc50c798faba43
-    print(hex(zeros), hex(eq)) # 0x0 0x3fffffffffffff8000000080000000
     '''
 
     '''
@@ -152,7 +132,7 @@ if __name__ == "__main__":
         for i in range(0, 624, 4):
             bits.append(rng.state[i] & 1)
     charpoly = gf2_berlekamp_massey(bits)
-    path = os.path.join(os.path.dirname(__file__), "charpoly_sfmt.txt")
+    path = os.path.join(PATH, "charpoly_sfmt.txt")
     with open(path, "w") as file:
         file.write(hex(charpoly))
     '''
@@ -180,14 +160,14 @@ if __name__ == "__main__":
     '''
     B = gf2mat_from_func(tinymt_127_lsb_sequence, 127, 128)
     B = np.delete(B, 31, 1) # delete the 31st column to make the matrix invertible
-    N = gf2mat_from_func(tinymt_next, 128, 128)
-    A = gf2mat_pow(N, 124)
+    T = gf2mat_from_func(tinymt_next, 128, 128)
+    A = gf2mat_pow(T, 124)
     A = np.delete(A, 31, 1) # delete the 31st column to make the product between A and B^-1 consistent
     P = (A @ gf2mat_inverse(B)) & 1
     print_bit_matrix_in_hex(P, 1, 2, [32, 32, 32, 32])
     '''
 
     B = gf2mat_from_func(xoroshiro128plus_128_lsb_sequence, 128, 128)
-    N = gf2mat_from_func(xoroshiro128plus_next, 128, 128)
-    P = (gf2mat_pow(N, 128) @ gf2mat_inverse(B)) & 1
+    T = gf2mat_from_func(xoroshiro128plus_next, 128, 128)
+    P = (gf2mat_pow(T, 128) @ gf2mat_inverse(B)) & 1
     print_bit_matrix_in_hex(P, 1, 2, [64, 64])

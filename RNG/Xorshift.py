@@ -61,7 +61,7 @@ class Xorshift128:
         return self.s3
 
     def next_u32(self) -> int:
-        return (self.next() % 0xffffffff) ^ 0x80000000 # <==> ((self.next() % 0xffffffff) + 0x80000000) & 0xffffffff
+        return (self.next() % 0xffffffff) ^ 0x80000000 # <==> rand_range(-0x80000000, 0x7fffffff)
 
     def rand(self, maximum: int) -> int:
         return self.next_u32() % maximum

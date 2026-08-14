@@ -54,7 +54,7 @@ def gf2x_square(f: int):
 
     while f:
         d = f.bit_length() - 1
-        res ^= 1 << (d << 1) # f^2(x) = f(x^2) in GF(2)
+        res ^= 1 << (d << 1) # f^2(x) = f(x^2) in GF(2)[X]
         f ^= 1 << d
 
     return res
@@ -231,11 +231,11 @@ def gf2x_is_irreducible(f: int) -> bool:
     return gf2x_pow_mod(2, 1 << d, f) == 2
 
 def gf2_berlekamp_massey(bits: Sequence[int]) -> int:
-    """Calculates the shortest linear-feedback shift register (LFSR) for a given binary output sequence."""
+    """Calculates the shortest linear-feedback shift register (LFSR) of the given binary output sequence."""
     C = B = m = 1
     L = mask = 0
 
-    for n, i in enumerate(range(len(bits) - 1, -1, -1)):
+    for n, i in enumerate(reversed(range(len(bits)))):
         d = bits[i] ^ ((C >> 1) & mask).bit_count() & 1
         mask = (mask << 1) | bits[i]
 

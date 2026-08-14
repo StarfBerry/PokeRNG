@@ -120,17 +120,17 @@ def gf2mat_constraints(mat: Matrix) -> tuple[int, int]:
     """Computes the constraints to check if a vector lives in the column space of the given matrix."""
     _, terms, rank = gf2mat_reduced_row_echelon_form(mat)
 
-    zeros = equation = 0
+    zeros = cartesian_eq = 0
 
     for i in range(rank, mat.shape[0]):
         if terms[i].bit_count() == 1:
             zeros |= terms[i]
         else:
-            equation ^= terms[i]
+            cartesian_eq ^= terms[i]
 
     # These constraints can be checked using bitmasks and a XOR sum over a vector represented as an integer.
-    # Like this: (vec & zeros) == 0 and ((vec & equation).bit_count() & 1) == 0
-    return (zeros, equation)
+    # Like this: (vec & zeros) == 0 and ((vec & cartesian_eq).bit_count() & 1) == 0
+    return (zeros, cartesian_eq)
 
 def gf2xmat_det(mat: MatrixPoly, in_place: bool = False, max_degree: int = -1) -> int:
     """
