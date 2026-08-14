@@ -232,6 +232,8 @@ def gf2x_is_irreducible(f: int) -> bool:
 
 def gf2_berlekamp_massey(bits: Sequence[int]) -> int:
     """Calculates the shortest linear-feedback shift register (LFSR) of the given binary output sequence."""
+    assert len(bits) & 1 == 0, "The length of the bits sequence must be even."
+
     C = B = m = 1
     L = mask = 0
 
