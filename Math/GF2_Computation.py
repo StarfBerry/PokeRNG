@@ -67,7 +67,15 @@ def xorshift128_bdsp_blinks(state128: int, intervals: Sequence[int]) -> int:
         bits |= b << (4 * i)
     return bits
 
-def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int, bits_slice: Sequence[int] = None):
+def get_fmt(bit_size: int, chunk_bits: int) -> Callable[[int], str]:
+    b = chunk_bits
+    h = (b + 3) >> 2
+    m = (1 << b) - 1
+    s = (bit_size + b - 1) // b
+    fmt = lambda n: "({})".format(", ".join(f"0x{(n >> (b * i)) & m:0{h}x}" for i in range(s)))
+    return fmt
+
+def print_gf2mat_in_hex(mat: Matrix, axis: int, per_line: int, chunk_bits: int | None = None):
     if axis == 0:
         # rows
         get_axis = lambda i: mat[i]
@@ -77,30 +85,24 @@ def print_bit_matrix_in_hex(mat: Matrix, axis: int, per_line: int, bits_slice: S
         get_axis = lambda i: mat[:, i]
         axis_length = mat.shape[1]
 
-    if bits_slice:
-        assert sum(bits_slice) == mat.shape[(axis & 1) ^ 1]
-        hex_size = [(b + 3) >> 2 for b in bits_slice]
-        mask = [(1 << b) - 1 for b in bits_slice]
-        shift = [sh := 0] + [sh := sh + b for b in bits_slice[:-1]]
-        fmt = lambda a: "({})".format(", ".join(f"0x{(a >> s) & m:0{h}x}" for s, m, h in zip(shift, mask, hex_size)))
+    if chunk_bits is not None:
+        fmt = get_fmt(mat.shape[(axis & 1) ^ 1], chunk_bits)
     else:
-        hex_size = (axis_length + 3) >> 2
-        fmt = lambda a: f"0x{a:0{hex_size}x}"
+        h = (axis_length + 3) >> 2
+        fmt = lambda a: f"0x{a:0{h}x}"
 
     for i in range(axis_length):
         a = gf2vec_to_int(get_axis(i))
         print(fmt(a), end = "\n" if i == axis_length - 1 else ", " if (i + 1) % per_line else ",\n")
 
-def print_jump_table_in_hex(charpoly: int, size: int, per_line: int, bits_slice: Sequence[int] = None):
-    if bits_slice:
-        assert sum(bits_slice) == charpoly.bit_length() - 1
-        hex_size = [(b + 3) >> 2 for b in bits_slice]
-        mask = [(1 << b) - 1 for b in bits_slice]
-        shift = [sh := 0] + [sh := sh + b for b in bits_slice[:-1]]
-        fmt = lambda p: "({})".format(", ".join(f"0x{(p >> s) & m:0{h}x}" for s, m, h in zip(shift, mask, hex_size)))
+def print_jump_table_in_hex(charpoly: int, size: int, per_line: int, chunk_bits: int | None = None):
+    r = charpoly.bit_length() - 1
+
+    if chunk_bits is not None:
+        fmt = get_fmt(r, chunk_bits)
     else:
-        hex_size = (charpoly.bit_length() - 1 + 3) >> 2
-        fmt = lambda p: f"0x{p:0{hex_size}x}"
+        h = (r + 3) >> 2
+        fmt = lambda p: f"0x{p:0{h}x}"
 
     for i in range(size):
         p = gf2x_pow_mod(2, 1 << i, charpoly)
@@ -166,10 +168,10 @@ if __name__ == "__main__":
     A = gf2mat_pow(T, 124)
     A = np.delete(A, 31, 1) # delete the 31st column to make the product between A and B^-1 consistent
     P = (A @ gf2mat_inverse(B)) & 1
-    print_bit_matrix_in_hex(P, 1, 2, [32, 32, 32, 32])
+    print_gf2mat_in_hex(P, 1, 2, 32)
     '''
 
     B = gf2mat_from_func(xoroshiro128plus_128_lsb_sequence, 128, 128)
     T = gf2mat_from_func(xoroshiro128plus_next, 128, 128)
     P = (gf2mat_pow(T, 128) @ gf2mat_inverse(B)) & 1
-    print_bit_matrix_in_hex(P, 1, 2, [64, 64])
+    print_gf2mat_in_hex(P, 1, 2, 64)
