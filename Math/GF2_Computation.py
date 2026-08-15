@@ -85,7 +85,7 @@ def print_gf2mat_in_hex(mat: Matrix, axis: int, per_line: int, chunk_bits: int |
         get_axis = lambda i: mat[:, i]
         axis_length = mat.shape[1]
 
-    if chunk_bits is not None:
+    if chunk_bits:
         fmt = get_fmt(mat.shape[(axis & 1) ^ 1], chunk_bits)
     else:
         h = (axis_length + 3) >> 2
@@ -98,7 +98,7 @@ def print_gf2mat_in_hex(mat: Matrix, axis: int, per_line: int, chunk_bits: int |
 def print_jump_table_in_hex(charpoly: int, size: int, per_line: int, chunk_bits: int | None = None):
     r = charpoly.bit_length() - 1
 
-    if chunk_bits is not None:
+    if chunk_bits:
         fmt = get_fmt(r, chunk_bits)
     else:
         h = (r + 3) >> 2

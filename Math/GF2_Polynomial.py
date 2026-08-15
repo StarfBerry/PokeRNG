@@ -104,6 +104,17 @@ def gf2x_mod(f: int, m: int) -> int:
 
     return f
 
+def gf2x_barrett_consts(m: int) -> tuple[int, int]:
+    """Calculates the constants involved in the Barrett reduction."""
+    k = gf2x_deg(m) << 1
+    mu = gf2x_div(1 << k, m)
+    return (k, mu)
+
+def gf2x_barrett_reduction(f: int, mu: int, k: int, m: int):
+    """Calculates f(x) mod m(x) using Barrett reduction, assuming deg(f) <= 2 * deg(m)."""
+    q = gf2x_mul_skip(f, mu) >> k # <==> gf2x_div(f, m), no correction is necessary in GF(2)[X]
+    return f ^ gf2x_mul_skip(q, m)
+
 def gf2x_mul_mod(f: int, g: int, m: int) -> int:
     """Calculates f(x) * g(x) modulo m(x)."""
     f = gf2x_mod(f, m)
