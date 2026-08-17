@@ -1,50 +1,52 @@
 from typing import Iterator
 
-# Seeds recovering for LCGs based on integer lattice basis reduction (https://en.wikipedia.org/wiki/Lattice_reduction).
+# Seeds recovery algorithms for LCGs based on integer lattice reduction (https://en.wikipedia.org/wiki/Lattice_reduction).
 # Here is an example of lattice reduction applied to an LCG: https://gist.github.com/EDDxample/38a9acddcd29f15af034fd91da93b8fa
-# And a video if you'd like to learn more: https://www.youtube.com/watch?v=gsaV9gcLntM
+# And a video if you want to learn more: https://www.youtube.com/watch?v=gsaV9gcLntM
 
 # The constants in the code were computed using this Sage script: https://gist.github.com/StarfBerry/6473c4e33ae73fc5b370530f694d47ab
 # Basically, the idea behind the script is to track where the vertices of a hypercube (representing the ranges of desired outputs) are sent into a reduced lattice.
-# Next, we look at the minimum and maximum coordinates in all dimensions to find the endpoints of the resulting parallelepiped.
-# Moreover, the user's desired outputs can be interpreted as a vertex of the hypercube, and we calculate the differences between the vector coordinates of the endpoints of the
-# parallelepiped and those of the user's vertex that was sent into the reduced lattice.
+# Next, we find the minimum and maximum coordinates in each dimension to determine the bounds of the resulting parallelepiped.
+# Additionally, the user's desired outputs can be interpreted as a vertex of the hypercube, the closest one to the origin.
+# We then compute the differences between the vector coordinates of the parallelepiped's extremes and those of the user's vertex mapped into the reduced lattice.
 # As long as the lengths of the output ranges provided by the user remain the same, the differences will remain unchanged and can be expressed as integer constants.
 # These integer constants can be added when calculating the coordinates of the user's vertex in the reduced lattice to obtain the extreme coordinates in each dimension.
-# In other words, we can bound the variables in the linear combinations to find all the solutions without resorting to matrix calculations or floating-point numbers at runtime.
+# In other words, the variables of the linear combinations can be bounded to find all solutions without resorting to matrix calculations or floating-point numbers at runtime.
 
-# In two dimensions, we use modular arithmetic and the fact that we know the strict upper bound of the unknowns (2^16 in our case), to avoid bounding one of the two variables in 
-# the linear combinations and, on average, perform fewer iterations than if we had calculated these linear combinations.
+# In two dimensions, we use modular arithmetic and the fact that we know the strict upper bounds of the unknowns (2^16 in our case) so that we do not have to bound one of the 
+# two variables within the linear combinations and, on average, perform fewer iterations than if we had calculated these linear combinations.
 # To compute the shortest basis roughly orthogonal in 2D, we can use Lagrange's algorithm: https://cryptohack.gitbook.io/cryptobook/lattices/lll-reduction/gaussian-reduction
 # In the Sage script, a different lattice reduction algorithm is used, the BKZ algorithm, which can be applied to any dimension and will produce the same results in 2D. 
 # However, Lagrange's algorithm was the first to be used during the implementation of the code, and it's also the oldest lattice reduction algorithm ever documented.
-# This is why Lagrange's name has been retained in the name of certain constants, as well as to name and illustrate the reduced matrices in the comments.
-# To begin computing the constants, we construct the matrix representing the lattice on which we will work, and then we apply Lagrange's algorithm to it.
+# This is why Lagrange's name was retained in the name of certain constants, as well as to name and illustrate the reduced matrices in the comments.
+# To start computing the constants, we construct the matrix representing the lattice we are going to work on, and we apply Lagrange's algorithm to it.
 # Next, we choose the variable to bound by looking for the one that minimizes the average number of iterations based on its range (which can be determined with the Sage script)
 # and the coefficient with the highest absolute value in the adjacent column, which will serve as the modulus.
-# The average number of iterations can be estimated with the following formula: range * 2^16 / abs(modulus).
+# The average number of iterations can be estimated with the following formula: `range * 2^16 / abs(modulus)`.
 # To ensure that the calculations in the code are performed correctly, the modulus must be positive and located on the first row of the Lagrange-reduced matrix.
 # If the modulus is on the second row, we can swap the rows by constructing the lattice matrix from the reversed version of the LCG, while applying Lagrange's algorithm to it.
 # In the case where the modulus is negative, we multiply the Lagrange-reduced matrix by -1 to obtain a positive modulus.
 # At the end, LAG0 and LAG1 are respectively the top left and top right coefficients of the resulting matrix.
 # If we bound the first variable, LAG1 is the modulus and LAG0 is reduced modulo LAG1, and vice-versa for the second variable.
-# Furthermore, our calculations involve integer divisions by the determinant of the Lagrange-reduced matrices.
-# In our case, these determinants are always powers of 2, which can be positive or negative.
-# If the determinant is positive, the integer division can be performed using a right bit shift.
-# To take advantage of this even when the determinant is negative, we transfer the sign of the determinant to the constant involved in the multiplication just before the modulo.
-# Thus, if the determinant of a Lagrange-reduced matrix is negative, the opposite of LAG0 or LAG1 (not the modulus) is used to compensate.
 
-# LOWER and UPPER constants are used to bound the variables in linear combinations in order to calculate potential solutions.
-# In the 2-dimension case, the constants returned by the Sage script have been divided by 2^16 (shifted right by 16), and extra values were added to most of them.
-# The division by 2^16 is due to the fact that the divisions by the determinant of the Lagrange-reduced matrices have been split into 2 subdivisions, and we assume that the 
-# constants have already been divided during the first subdivision. 
-# The extra values were added to prevent unsigned integer overflow (for programming languages such as C++, Rust, C#, etc.) while maintaining consistency with the moduli, or to 
-# allow division rounded up to the nearest integer.
-# If the determinant of the Lagrange-reduced matrix is negative, the constants displayed by the script must be swaped and multiplied by -1.
+# LOWER and UPPER constants are used to bound variables within linear combinations to calculate potential solutions.
+# In the 2D case, the constants returned by the Sage script were divided by 2^16 (shifted right by 16), and additional values were added to most of them.
+# The division by 2^16 is due to the fact that the calculations involve integer divisions by the Lagrange-reduced matrix determinants, which have been split into two
+# sub-divions, assuming that the constants were already divided during the first sub-division.
+# The additional values were added to prevent unsigned integer overflow (for programming languages such as C++, Rust, C#, etc.) while maintaining consistency with the moduli, or
+# to allow division rounded up to the nearest integer.
+# To return to the integer divisions by the Lagrange-reduced matrix determinants, these determinants are always powers of 2 in our case, which can be positive or negative.
+# If the determinant is positive, the integer division can be performed quickly using a right bit shift.
+# To maintain this advantage even when the determinant is negative, the sign of the determinant can be transferred to other constants or variables in two different ways.
+# The first one is by transferring the sign to the numerator of the division, which involves inverting the operands in the subtraction inside the `tmp` variable.
+# In this case, the signs of the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the determinant was positive.
+# The second method consists of transferring the sign to the constant involved in the multiplication right after the division, meaning LAG0 or LAG1 (not the modulus).
+# In this case, the values of the constants displayed by the Sage script (the LOWER value in parentheses and UPPER) must be inverted and multiplied by -1.
+# The best approach is the one that produces the smallest values in order to avoid overflow and maximize the number of calculations/variables that can fit into 32 bits.
 
 # The bitmasks `& 0xffff` in the `tmp` variables can be ignored, they are used only to simulate 32-bit calculations in Python.
 
-#################################################################################################################################################################
+################################################################################################################################################################################
 
 '''
 |          1     0 |   Lagrange   |  32471  -68321 |     Det
@@ -127,7 +129,7 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
                 yield seed
                 yield seed ^ 0x80000000
 
-#################################################################################################################################################################
+################################################################################################################################################################################
 
 '''
 |          1     0 |   Lagrange   |  27697   59251 |     Det
@@ -143,21 +145,24 @@ def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
 # LCRNG^2 PID/IVs Constants
 R_MULT_2 = 0xDC6C95D9 # reversed multiplier constant
 R_INCR_2 = 0x4D3CB126 # reversed increment constant
-R_LAG0_2 = 0x6C31     # 27697
-R_LAG1_PID_2 = 0x5D20 # -59251 mod 27697
+R_LAG0_2 = 0x6C31 # 27697
+
+R_LAG1_PID_2 = 0xF11 # 59251 mod 27697
+R_LOWER_PID_2 = 0x20A4F728 # (0x20A3F728F046 + 0xffff_ffff) >> 16
+R_UPPER_PID_2 = 0x20A49DE2 # (0x20A49DE2F046 >> 16)
+
 R_LAG1_IVS_2 = 0x2E90 # -43474 mod 27697
-R_LOWER_PID_2 = 0x4B8D621D # ((-0x20A49DE2F046 + 0xffff_ffff) >> 16) + (27697 << 16)
-R_LOWER_IVS_2 = 0x4B8CE21D # ((-0x20A49DE2F046 + 0x7fff_ffff) >> 16) + (27697 << 16)
-R_UPPER_2     = 0x4B8D08D7 # (-0x20A3F728F046 >> 16) + (27697 << 16)
+R_LOWER_IVS_2 = 0x1574621D # ((-0x20A49DE2F046 + 0x7fff_ffff) >> 16) + (27697 << 15)
+R_UPPER_IVS_2 = 0x157488D7 # (-0x20A3F728F046 >> 16) + (27697 << 15)
 
 # around 1.54 iterations on average
 def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
     first = (pid & 0xffff) << 16
     third = pid & 0xffff0000
 
-    tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
+    tmp = (((third * R_MULT_2 - first) >> 16) & 0xffff) * R_LAG0_2
     lo = (tmp + R_LOWER_PID_2) >> 16
-    up = (tmp + R_UPPER_2) >> 16
+    up = (tmp + R_UPPER_PID_2) >> 16
 
     # The range of the bounded variable is approximately 0.65, which is less than 1.
     # Therefore, in about 35% of cases, we can predict that there will be no solutions without having to enter the loop.
@@ -177,7 +182,7 @@ def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd
 
     tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
     lo = (tmp + R_LOWER_IVS_2) >> 15
-    up = (tmp + R_UPPER_2) >> 15
+    up = (tmp + R_UPPER_IVS_2) >> 15
 
     # each loop performs at most 3 iterations
     for lbits in range((lo * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
@@ -195,7 +200,7 @@ def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd
                 yield seed
                 yield seed ^ 0x80000000
 
-#################################################################################################################################################################
+################################################################################################################################################################################
 
 '''
 |          1     0 |   Lagrange   | -59601 -35210 |    *(-1)     | 59601   35210 |     Det
@@ -331,7 +336,7 @@ def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int,
                 yield seed
                 yield seed ^ 0x80000000
 
-#################################################################################################################################################################
+################################################################################################################################################################################
 
 '''
 In DPPt and HGSS, lottery numbers are generated using 2 different LCGs, as following:
@@ -366,6 +371,7 @@ LOTTO_R_UPPER = 0xC092F075 # (0xC092F0756124 >> 16)
 # around 1.46 iterations on average
 def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:    
     # `tmp` must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
+    # The bitmask `& 0xffff` is required in this case, otherwise the other variables must be 64-bit too 
     tmp = ((LOTTO_R_MULT * n1 - n0) & 0xffff) * LOTTO_R_LAG1
     lo = (tmp + LOTTO_R_LOWER) >> 16 
     up = (tmp + LOTTO_R_UPPER) >> 16
@@ -386,10 +392,11 @@ def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:
             if (seed >> 16) == n0:
                 yield (seed * R_MULT + 0xFC77A683) & 0xffffffff
 
-#################################################################################################################################################################
+################################################################################################################################################################################
 
 '''
-In Pokémon Ranch, PIDs are generated from a time base register, so there is no PID-IVs correlation but it's still possible to check if an IVs combination is valid.
+In My Pokémon Ranch, PIDs are generated from a time base register, meaning there is no correlation between PID and IVs.
+However, it's still possible to check if an IV combination is valid.
 IVs are generated as following:
 
 first  = (seed >> 16) & 0x7fff
@@ -400,8 +407,8 @@ rnd32 = ((second << 30) | (first << 15) | third) & 0xffff_ffff
 
 ivs = [(rnd32 >> (5 * i)) & 31 for i in range(6)] # hp, atk, dfs, spe, spa, spd
 
-As we can see, only 'first' and 'third' are used to generate the IVs.
-Furthermore, LCRNG^2 and MRNG^2 share the same multiplier, so we can use certain constants that were defined previously.
+As we can see, only `first` and `third` are used to generate the IVs.
+Furthermore, since LCRNG^2 and MRNG^2 share the same multiplier, we can use certain constants defined previously.
 '''
 
 RANCH_R_INCR  = 0x8C319932 # reversed increment constant
@@ -433,7 +440,7 @@ def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
                 yield seed
                 yield seed ^ 0x80000000
 
-#################################################################################################################################################################
+################################################################################################################################################################################
 
 '''
 |                  1     0 |   Lagrange   | -3070150413  3572620529 |    *(-1)     | 3070150413 -3572620529 |     Det
@@ -472,7 +479,7 @@ def BWRNG_recover_states_from_2x32_bits(out0: int, out1: int) -> Iterator[int]:
             if (state >> 32) == out0:
                 yield state
 
-#################################################################################################################################################################
+################################################################################################################################################################################
 
 '''
 |          1    0    0    0    0    0 |           |  -2528644 -24142902  52961366   7565619  24945956 -99942057 |            | -10  23  -1 -15  52 -53 |
@@ -492,7 +499,7 @@ M = (0x343FD, 0xA9FC6809, 0x45C82BE5, 0xDDFF5051, 0x284A930D)
 # Increment constants
 I = (0x269EC3, 0x1E278E7A, 0xD2F65B55, 0x98520C4, 0xA2974C77)
 
-# Constants to bound the variables in the linear combinations for calculating potential solutions
+# Constants to bound variables within linear combinations for calculating potential solutions
 CHANNEL_LOWER = (0x2AB966D1C2, 0x2169A3AA47, -0x5049D5FDC, -0x2AACDA387, 0xFE7FFFFFF, -0x898000001)
 CHANNEL_UPPER = (0x2E8966D1C3, 0x23D9A3AA48, -0x3549D5FDB, -0xDACDA386, 0x1098000000, -0x7E8000000)
 
