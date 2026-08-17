@@ -13,10 +13,11 @@ from typing import Iterator
 # These integer constants can be added when calculating the coordinates of the user's vertex in the reduced lattice to obtain the extreme coordinates in each dimension.
 # In other words, the variables of the linear combinations can be bounded to find all solutions without resorting to matrix calculations or floating-point numbers at runtime.
 
-# In two dimensions, we use modular arithmetic and the fact that we know the strict upper bounds of the unknowns (2^16 in our case) so that we do not have to bound one of the 
-# two variables within the linear combinations and, on average, perform fewer iterations than if we had calculated these linear combinations.
+# In the two-dimension case, the linear combinations are reduced modulo one of the two variables, eliminating the need to bound the variable used as the modulus.
+# Furthermore, knowing the strict upper bound of the unknowns (2^16 in our case) allows this approach to perform fewer iterations, on average, than if we had calculated the
+# linear combinations directly.
 # To compute the shortest basis roughly orthogonal in 2D, we can use Lagrange's algorithm: https://cryptohack.gitbook.io/cryptobook/lattices/lll-reduction/gaussian-reduction
-# In the Sage script, a different lattice reduction algorithm is used, the BKZ algorithm, which can be applied to any dimension and will produce the same results in 2D. 
+# In the Sage script, a different lattice reduction algorithm is used, the BKZ algorithm, which can be applied to higher dimensions and yields the same results in 2D. 
 # However, Lagrange's algorithm was the first to be used during the implementation of the code, and it's also the oldest lattice reduction algorithm ever documented.
 # This is why Lagrange's name was retained in the name of certain constants, as well as to name and illustrate the reduced matrices in the comments.
 # To start computing the constants, we construct the matrix representing the lattice we are going to work on, and we apply Lagrange's algorithm to it.
@@ -24,15 +25,15 @@ from typing import Iterator
 # and the coefficient with the highest absolute value in the adjacent column, which will serve as the modulus.
 # The average number of iterations can be estimated with the following formula: `range * 2^16 / abs(modulus)`.
 # To ensure that the calculations in the code are performed correctly, the modulus must be positive and located on the first row of the Lagrange-reduced matrix.
-# If the modulus is on the second row, we can swap the rows by constructing the lattice matrix from the reversed version of the LCG, while applying Lagrange's algorithm to it.
-# In the case where the modulus is negative, we multiply the Lagrange-reduced matrix by -1 to obtain a positive modulus.
+# If the modulus is on the second row, the rows can be swapped by constructing the lattice matrix from the reversed LCG, while applying Lagrange's algorithm to it again.
+# In case the modulus is negative, we multiply the Lagrange-reduced matrix by -1.
 # At the end, LAG0 and LAG1 are respectively the top left and top right coefficients of the resulting matrix.
 # If we bound the first variable, LAG1 is the modulus and LAG0 is reduced modulo LAG1, and vice-versa for the second variable.
 
-# LOWER and UPPER constants are used to bound variables within linear combinations to calculate potential solutions.
+# LOWER and UPPER constants are used to bound the variables of the linear combinations in order to calculate potential solutions.
 # In the 2D case, the constants returned by the Sage script were divided by 2^16 (shifted right by 16), and additional values were added to most of them.
-# The division by 2^16 is due to the fact that the calculations involve integer divisions by the Lagrange-reduced matrix determinants, which have been split into two
-# sub-divions, assuming that the constants were already divided during the first sub-division.
+# The division by 2^16 is due to the fact that the calculations involve integer divisions by the Lagrange-reduced matrix determinants, which have been split into two 
+# sub-divisions, and it's assumed that the constants have already been divided during the first sub-division.
 # The additional values were added to prevent unsigned integer overflow (for programming languages such as C++, Rust, C#, etc.) while maintaining consistency with the moduli, or
 # to allow division rounded up to the nearest integer.
 # To return to the integer divisions by the Lagrange-reduced matrix determinants, these determinants are always powers of 2 in our case, which can be positive or negative.
@@ -42,7 +43,7 @@ from typing import Iterator
 # In this case, the signs of the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the determinant was positive.
 # The second method consists of transferring the sign to the constant involved in the multiplication right after the division, meaning LAG0 or LAG1 (not the modulus).
 # In this case, the values of the constants displayed by the Sage script (the LOWER value in parentheses and UPPER) must be inverted and multiplied by -1.
-# The best approach is the one that produces the smallest values in order to avoid overflow and maximize the number of calculations/variables that can fit into 32 bits.
+# The best method is the one that produces the smallest values in order to avoid overflow and maximize the number of calculations/variables that can fit into 32 bits.
 
 # The bitmasks `& 0xffff` in the `tmp` variables can be ignored, they are used only to simulate 32-bit calculations in Python.
 
@@ -499,7 +500,7 @@ M = (0x343FD, 0xA9FC6809, 0x45C82BE5, 0xDDFF5051, 0x284A930D)
 # Increment constants
 I = (0x269EC3, 0x1E278E7A, 0xD2F65B55, 0x98520C4, 0xA2974C77)
 
-# Constants to bound variables within linear combinations for calculating potential solutions
+# Constants to bound the variables of the linear combinations for calculating potential solutions
 CHANNEL_LOWER = (0x2AB966D1C2, 0x2169A3AA47, -0x5049D5FDC, -0x2AACDA387, 0xFE7FFFFFF, -0x898000001)
 CHANNEL_UPPER = (0x2E8966D1C3, 0x23D9A3AA48, -0x3549D5FDB, -0xDACDA386, 0x1098000000, -0x7E8000000)
 
