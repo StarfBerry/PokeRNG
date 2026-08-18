@@ -32,18 +32,20 @@ from typing import Iterator
 
 # LOWER and UPPER constants are used to bound the variables of the linear combinations in order to calculate potential solutions.
 # In the 2D case, the constants returned by the Sage script were divided by 2^16 (shifted right by 16), and additional values were added to most of them.
-# The division by 2^16 is due to the fact that the calculations involve integer divisions by the Lagrange-reduced matrix determinants, which have been split into two 
-# sub-divisions, and it's assumed that the constants have already been divided during the first sub-division.
+# The division by 2^16 is due to the fact that the calculations involve integer divisions by the determinants of the matrices, which have been split into two sub-divisions, and
+# it's assumed that the constants have already been divided during the first sub-division.
 # The additional values were added to prevent unsigned integer overflow (for programming languages such as C++, Rust, C#, etc.) while maintaining consistency with the moduli, or
 # to allow division rounded up to the nearest integer.
-# To return to the integer divisions by the Lagrange-reduced matrix determinants, these determinants are always powers of 2 in our case, which can be positive or negative.
+# To return to the integer divisions by the determinants, these determinants are always powers of 2 in our case, which can be positive or negative.
 # If the determinant is positive, the integer division can be performed quickly using a right bit shift.
 # To maintain this advantage even when the determinant is negative, the sign of the determinant can be transferred to other constants or variables in two different ways.
 # The first one is by transferring the sign to the numerator of the division, which involves inverting the operands of the subtraction inside the `tmp` variable.
-# In this case, the signs of the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the determinant was positive.
-# The second method consists of transferring the sign to the constant involved in the multiplication right after the division, meaning LAG0 or LAG1 (not the modulus).
+# In this case, the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the determinant was positive.
+# The second method consists of transferring the sign to the multiplier right after the division, namely the LAG0 or LAG1 constant (not the modulus).
 # In this case, the values of the constants displayed by the Sage script (the LOWER value in parentheses and UPPER) must be inverted and multiplied by -1.
-# The best method is the one that produces the smallest values in order to avoid overflow and maximize the number of calculations/variables that can fit into 32 bits.
+# The optimal approach is the one that produces the smallest values and maximize the number of calculations/variables that can fit into 32 bits.
+# Similarly, when the determinant is positive, we can invert the subtraction operands and the values displayed by the script, while reversing the signs of all constants except
+# the modulus, in order to obtain a new set of constants that may be more optimal than the old one.
 
 # The bitmasks `& 0xffff` in the `tmp` variables can be ignored, they are used only to simulate 32-bit calculations in Python.
 
@@ -56,12 +58,12 @@ from typing import Iterator
 '''
 
 # LCRNG PID Constants
-R_MULT  = 0xEEB9EB65 # reversed multiplier constant
-R_INCR  = 0xA3561A1  # reversed increment constant
-R_LAG0  = 0x7ED7     # 32471
-R_LAG1  = 0x71A4     # -68321 mod 32471
-R_LOWER = 0x79C8BF4A # ((-0x50F40B53C37 + 0xffff_ffff) >> 16) + (32471 << 16)
-R_UPPER = 0x79C8A5F4 # (-0x50E5A0B3C37 >> 16) + (32471 << 16)
+R_MULT = 0xEEB9EB65 # reversed multiplier constant
+R_INCR = 0xA3561A1  # reversed increment constant
+R_LAG0 = 0x7ED7 # 32471
+R_LAG1 = 0xD33 # 68321 mod 32471
+R_LOWER = 0x50F5A0B # (0x50E5A0B3C37 + 0xffff_ffff) >> 16
+R_UPPER = 0x50F40B5 # (0x50F40B53C37 >> 16)
 
 '''
 |          1     0 |   Lagrange   |  26579  -51463 |    *(-1)     | -26579   51463 |     Det
@@ -70,19 +72,19 @@ R_UPPER = 0x79C8A5F4 # (-0x50E5A0B3C37 >> 16) + (32471 << 16)
 '''
 
 # LCRNG IVs Constants
-MULT  = 0x41C64E6D # multiplier constant
-INCR  = 0x6073     # increment constant
-LAG0  = 0x6134     # -26579 mod 51463
-LAG1  = 0xC907     # 51463
-LOWER = 0x64833CB0 # ((-0xC34F11DB + 0x7fff_ffff) >> 16) + (51463 << 15)
-UPPER = 0x6483CBBC # (0x4BBCEE25 >> 16) + (51463 << 15)
+MULT = 0x41C64E6D # multiplier constant
+INCR = 0x6073 # increment constant
+LAG0 = 0x67D3 # 26579
+LAG1 = 0xC907 # 51463
+LOWER = 0x3443 # (-0x4BBCEE25 + 0x7fff_ffff) >> 16
+UPPER = 0xC34F # (0xC34F11DB >> 16)
 
 # around 1.82 iterations on average
 def LCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     first = (pid & 0xffff) << 16
     second = pid & 0xffff0000
 
-    tmp = (((first - second * R_MULT) >> 16) & 0xffff) * R_LAG0
+    tmp = (((second * R_MULT - first) >> 16) & 0xffff) * R_LAG0
     lo = (tmp + R_LOWER) >> 16
     up = (tmp + R_UPPER) >> 16
 
@@ -99,11 +101,10 @@ def LCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
 
 # around 2.70 iterations on average
 def LCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
-    first  = ((dfs << 10) | (atk << 5) | hp ) << 16
+    first = ((dfs << 10) | (atk << 5) | hp) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
-    # `tmp` must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
-    tmp = (((MULT * first - second) >> 16) & 0xffff) * LAG1
+    tmp = (((second - MULT * first) >> 16) & 0xffff) * LAG1
     lo = ((tmp + LOWER) >> 15) * LAG0
     mi = lo + LAG0
     up = ((tmp + UPPER) >> 15) * LAG0
@@ -178,7 +179,7 @@ def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
 
 # around 3.08 iterations on average
 def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
-    first = ((dfs << 10) | (atk << 5) | hp ) << 16
+    first = ((dfs << 10) | (atk << 5) | hp) << 16
     third = ((spd << 10) | (spa << 5) | spe) << 16
 
     tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
@@ -210,10 +211,10 @@ def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd
 '''
 
 # GCRNG PID Constants
-GC_R_MULT  = 0xB9B33155 # reversed multiplier constant
-GC_R_INCR  = 0xA170F641 # reversed increment constant
-GC_R_LAG0  = 0xE8D1     # 59601
-GC_R_LAG1  = 0x5F47     # -35210 mod 59601
+GC_R_MULT = 0xB9B33155 # reversed multiplier constant
+GC_R_INCR = 0xA170F641 # reversed increment constant
+GC_R_LAG0 = 0xE8D1 # 59601
+GC_R_LAG1 = 0x5F47 # -35210 mod 59601
 GC_R_LOWER = 0x55FF8537 # ((-0x92D27AC8F311 + 0xffff_ffff) >> 16) + (59601 << 16)
 GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 
@@ -229,16 +230,16 @@ GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 '''
 
 # GCRNG IVs Constants (bounding the first variable)
-GC_R_LAG0_IVS  = 0x44C5     # 17605
-GC_R_LAG1_IVS  = 0xE8D1     # 59601
+GC_R_LAG0_IVS = 0x44C5 # 17605
+GC_R_LAG1_IVS = 0xE8D1 # 59601
 GC_R_LOWER_IVS = 0x1E694392 # (0x1E68C392F311 + 0x7fff_ffff) >> 16
 GC_R_UPPER_IVS = 0x1E69FAC8 # (0x1E69FAC8F311 >> 16)
 
 # GCRNG IVs Constants (bounding the second variable)
-GC_MULT  = 0x343FD    # multiplier constant
-GC_INCR  = 0x269EC3   # increment constant
-GC_LAG0  = 0x7597     # 30103
-GC_LAG1  = 0x4E65     # 20069
+GC_MULT = 0x343FD  # multiplier constant
+GC_INCR = 0x269EC3 # increment constant
+GC_LAG0 = 0x7597 # 30103
+GC_LAG1 = 0x4E65 # 20069
 GC_LOWER = 0x3ABA42A9 # ((-0x11BD56C405 + 0x7fff_ffff) >> 16) + (30103 << 15)
 GC_UPPER = 0x3ABA7D05 # (-0x1102FAC405 >> 16) + (30103 << 15)
 
@@ -281,7 +282,7 @@ def channel_recover_pid_seeds(pid: int) -> Iterator[int]:
 
 # around 2.63 iterations on average
 def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
-    first  = ((dfs << 10) | (atk << 5) | hp ) << 16
+    first = ((dfs << 10) | (atk << 5) | hp) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
     # `tmp` must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
@@ -314,7 +315,7 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
 
 # around 3.17 iterations on average
 def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
-    first  = ((dfs << 10) | (atk << 5) | hp ) << 16
+    first = ((dfs << 10) | (atk << 5) | hp) << 16
     second = ((spd << 10) | (spa << 5) | spe) << 16
 
     tmp = (((second - first * GC_MULT) >> 16) & 0xffff) * GC_LAG0 
@@ -362,10 +363,10 @@ However, it's more advantageous to work with the reversed version of this new LC
 | 0x9638806D  2^32 |              | -46603  28804 |              | 46603  -28804 |
 '''
 
-LOTTO_R_MULT  = 0x9638806D # reversed multiplier constant
-LOTTO_R_INCR  = 0xC6D9438B # reversed increment constant
-LOTTO_R_LAG0  = 0x4295     # -46423 mod 63468
-LOTTO_R_LAG1  = 0xF7EC     # 63468
+LOTTO_R_MULT = 0x9638806D # reversed multiplier constant
+LOTTO_R_INCR = 0xC6D9438B # reversed increment constant
+LOTTO_R_LAG0 = 0x4295 # -46423 mod 63468
+LOTTO_R_LAG1 = 0xF7EC # 63468
 LOTTO_R_LOWER = 0xC0928805 # (0xC09188056124 + 0xffff_ffff) >> 16
 LOTTO_R_UPPER = 0xC092F075 # (0xC092F0756124 >> 16)
 
@@ -412,14 +413,14 @@ As we can see, only `first` and `third` are used to generate the IVs.
 Furthermore, since LCRNG^2 and MRNG^2 share the same multiplier, we can use certain constants defined previously.
 '''
 
-RANCH_R_INCR  = 0x8C319932 # reversed increment constant
+RANCH_R_INCR = 0x8C319932 # reversed increment constant
 RANCH_R_LOWER = 0x30F18357 # ((-0x5277CA86A92 + 0x7fff_ffff) >> 16) + (27697 << 15)
 RANCH_R_UPPER = 0x30F1AA11 # (-0x526D5EE6A92 >> 16) + (27697 << 15)
 
 # around 3.08 iterations on average
 def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
     first = ((spd << 10) | (spa << 5) | spe) << 16
-    third = ((dfs << 10) | (atk << 5) | hp ) << 16
+    third = ((dfs << 10) | (atk << 5) | hp) << 16
 
     tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
     lo = (tmp + RANCH_R_LOWER) >> 15
@@ -450,10 +451,10 @@ def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
 '''
 
 # Proof of concept for 64-bit LCGs
-BW_R_MULT  = 0xDEDCEDAE9638806D # reversed multiplier constant
-BW_R_INCR  = 0x9B1AE6E9A384E6F9 # reversed increment constant
-BW_R_LAG0  = 0xB6FEC70D         # 3070150413
-BW_R_LAG1  = 0x990BB129         # -3572620529 mod 3070150413
+BW_R_MULT = 0xDEDCEDAE9638806D # reversed multiplier constant
+BW_R_INCR = 0x9B1AE6E9A384E6F9 # reversed increment constant
+BW_R_LAG0 = 0xB6FEC70D # 3070150413
+BW_R_LAG1 = 0x990BB129 # -3572620529 mod 3070150413
 BW_R_LOWER = 0x481F49988938ADF4 # ((-0x6EDF7D7576C7520BCE5949A5 + 0xffff_ffff_ffff_ffff) >> 32) + (3070150413 << 32)
 BW_R_UPPER = 0x481F4998B710B5F4 # (-0x6EDF7D7448EF4A0BCE5949A5 >> 32) + (3070150413 << 32)
 
