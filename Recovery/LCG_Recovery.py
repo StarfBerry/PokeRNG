@@ -413,8 +413,8 @@ Furthermore, since LCRNG^2 and MRNG^2 share the same multiplier, we can use cert
 '''
 
 RANCH_R_INCR  = 0x8C319932 # reversed increment constant
-RANCH_R_LOWER = 0x670A0357 # ((-0x5277CA86A92 + 0x7fff_ffff) >> 16) + (27697 << 16)
-RANCH_R_UPPER = 0x670A2A11 # (-0x526D5EE6A92 >> 16) + (27697 << 16)
+RANCH_R_LOWER = 0x30F18357 # ((-0x5277CA86A92 + 0x7fff_ffff) >> 16) + (27697 << 15)
+RANCH_R_UPPER = 0x30F1AA11 # (-0x526D5EE6A92 >> 16) + (27697 << 15)
 
 # around 3.08 iterations on average
 def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
