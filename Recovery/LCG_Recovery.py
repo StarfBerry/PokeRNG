@@ -208,40 +208,26 @@ def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd
 |          1     0 |   Lagrange   | -59601 -35210 |    *(-1)     | 59601   35210 |     Det
 |                  | ===========> |               | ===========> |               | ===========> -2^32
 | 0xB9B33155  2^32 |              | -20069  60206 |              | 20069  -60206 |
-'''
 
-# GCRNG PID Constants
-GC_R_MULT = 0xB9B33155 # reversed multiplier constant
-GC_R_INCR = 0xA170F641 # reversed increment constant
-GC_R_LAG0 = 0xE8D1 # 59601
-GC_R_LAG1 = 0x5F47 # -35210 mod 59601
-GC_R_LOWER = 0x55FF8537 # ((-0x92D27AC8F311 + 0xffff_ffff) >> 16) + (59601 << 16)
-GC_R_UPPER = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
 
-'''
 |          1     0 |   Lagrange   | -17605  59601 |     Det
 |                  | ===========> |               | ===========> -2^31
 | 0x39B33155  2^31 |              |  30103  20069 |
-
-
-|          1     0 |   Lagrange   |  30103  20069 |     Det
-|                  | ===========> |               | ===========> 2^31
-|    0x343FD  2^31 |              | -17605  59601 |
 '''
 
-# GCRNG IVs Constants (bounding the first variable)
+# GCRNG PID/IVs Constants
+GC_R_MULT = 0xB9B33155 # reversed multiplier constant
+GC_R_INCR = 0xA170F641 # reversed increment constant
+
+GC_R_LAG0_PID = 0xE8D1 # 59601
+GC_R_LAG1_PID = 0x5F47 # -35210 mod 59601
+GC_R_LOWER_PID = 0x55FF8537 # ((-0x92D27AC8F311 + 0xffff_ffff) >> 16) + (59601 << 16)
+GC_R_UPPER_PID = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
+
 GC_R_LAG0_IVS = 0x44C5 # 17605
 GC_R_LAG1_IVS = 0xE8D1 # 59601
 GC_R_LOWER_IVS = 0x1E694392 # (0x1E68C392F311 + 0x7fff_ffff) >> 16
 GC_R_UPPER_IVS = 0x1E69FAC8 # (0x1E69FAC8F311 >> 16)
-
-# GCRNG IVs Constants (bounding the second variable)
-GC_MULT = 0x343FD  # multiplier constant
-GC_INCR = 0x269EC3 # increment constant
-GC_LAG0 = 0x7597 # 30103
-GC_LAG1 = 0x4E65 # 20069
-GC_LOWER = 0x3ABA42A9 # ((-0x11BD56C405 + 0x7fff_ffff) >> 16) + (30103 << 15)
-GC_UPPER = 0x3ABA7D05 # (-0x1102FAC405 >> 16) + (30103 << 15)
 
 # around 1.34 iterations on average
 def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
@@ -249,12 +235,12 @@ def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     second = (pid & 0xffff) << 16
 
     # `tmp` must be 64-bit to avoid overflow via addition with the LOWER and UPPER constants
-    tmp = (((first - second * GC_R_MULT) >> 16) & 0xffff) * GC_R_LAG0
-    lo = (tmp + GC_R_LOWER) >> 16
-    up = (tmp + GC_R_UPPER) >> 16
+    tmp = (((first - second * GC_R_MULT) >> 16) & 0xffff) * GC_R_LAG0_PID
+    lo = (tmp + GC_R_LOWER_PID) >> 16
+    up = (tmp + GC_R_UPPER_PID) >> 16
 
     # each loop performs at most 2 iterations
-    for lbits in range((lo * GC_R_LAG1) % GC_R_LAG0, 0x10000, GC_R_LAG0):
+    for lbits in range((lo * GC_R_LAG1_PID) % GC_R_LAG0_PID, 0x10000, GC_R_LAG0_PID):
         seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
         if (seed & 0xffff0000) == first:
             yield seed
@@ -262,7 +248,7 @@ def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
     # The range of the bounded variable is approximately 1.22.
     # Therefore, in about 22% of cases, we will enter the second loop.
     if lo != up:
-        for lbits in range((up * GC_R_LAG1) % GC_R_LAG0, 0x10000, GC_R_LAG0):
+        for lbits in range((up * GC_R_LAG1_PID) % GC_R_LAG0_PID, 0x10000, GC_R_LAG0_PID):
             seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
             if (seed & 0xffff0000) == first:
                 yield seed
@@ -310,31 +296,6 @@ def GCRNG_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe
         for lbits in range(up % GC_R_LAG1_IVS, 0x10000, GC_R_LAG1_IVS):
             seed = ((second | lbits) * GC_R_MULT + GC_R_INCR) & 0xffffffff
             if (seed & 0x7fff0000) == first:
-                yield seed
-                yield seed ^ 0x80000000
-
-# around 3.17 iterations on average
-def GCRNG_recover_ivs_seeds_bis(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
-    first = ((dfs << 10) | (atk << 5) | hp) << 16
-    second = ((spd << 10) | (spa << 5) | spe) << 16
-
-    tmp = (((second - first * GC_MULT) >> 16) & 0xffff) * GC_LAG0 
-    lo = (tmp + GC_LOWER) >> 15
-    up = (tmp + GC_UPPER) >> 15
-
-    # each loop performs at most 3 iterations
-    for lbits in range((lo * GC_LAG1) % GC_LAG0, 0x10000, GC_LAG0):
-        seed = first | lbits
-        if ((seed * GC_MULT + GC_INCR) & 0x7fff0000) == second:
-            yield seed
-            yield seed ^ 0x80000000
-
-    # The range of the bounded variable is approximately 1.46.
-    # Therefore, in about 46% of cases, we will enter the second loop.
-    if lo != up:
-        for lbits in range((up * GC_LAG1) % GC_LAG0, 0x10000, GC_LAG0):
-            seed = first | lbits
-            if ((seed * GC_MULT + GC_INCR) & 0x7fff0000) == second:
                 yield seed
                 yield seed ^ 0x80000000
 
@@ -641,8 +602,6 @@ if __name__ == "__main__":
     #test_recover_pid_seeds(GCRNG_recover_pid_seeds, 0x343FD, 0x269EC3, 10_000_000, True)
 
     #test_recover_ivs_seeds(GCRNG_recover_ivs_seeds, 0x343FD, 0x269EC3, 10_000_000)
-
-    #test_recover_ivs_seeds(GCRNG_recover_ivs_seeds_bis, 0x343FD, 0x269EC3, 10_000_000)
 
     #test_BWRNG_recover_states_from_2x32_bits(10_000_000)
 
