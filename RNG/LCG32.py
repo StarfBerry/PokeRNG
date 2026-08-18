@@ -11,14 +11,14 @@ def lcg32_jump_tables(mult: int, incr: int) -> tuple[tuple[int, ...], tuple[int,
     return (tuple(mult_table), tuple(incr_table))
 
 def define_lcg32(mult: int, incr: int) -> type:
+    mult &= 0xffffffff
+    incr &= 0xffffffff
+
     # Hull-Dobell Theorem for maximum period (https://en.wikipedia.org/wiki/Linear_congruential_generator#m_a_power_of_2,_c_%E2%89%A0_0)
     assert mult % 4 == 1 and incr % 2 == 1, "The LCG doesn't have maximum period."
 
     # Maximum potency for better randomness (https://fr.wikipedia.org/wiki/G%C3%A9n%C3%A9rateur_congruentiel_lin%C3%A9aire#Le_potentiel)
     assert mult % 8 == 5, "The multiplier doesn't have maximum potency."
-
-    mult &= 0xffffffff
-    incr &= 0xffffffff
 
     class LCG32:
         MULT_TABLE, INCR_TABLE = lcg32_jump_tables(mult, incr)

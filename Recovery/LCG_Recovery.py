@@ -39,7 +39,7 @@ from typing import Iterator
 # To return to the integer divisions by the Lagrange-reduced matrix determinants, these determinants are always powers of 2 in our case, which can be positive or negative.
 # If the determinant is positive, the integer division can be performed quickly using a right bit shift.
 # To maintain this advantage even when the determinant is negative, the sign of the determinant can be transferred to other constants or variables in two different ways.
-# The first one is by transferring the sign to the numerator of the division, which involves inverting the operands in the subtraction inside the `tmp` variable.
+# The first one is by transferring the sign to the numerator of the division, which involves inverting the operands of the subtraction inside the `tmp` variable.
 # In this case, the signs of the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the determinant was positive.
 # The second method consists of transferring the sign to the constant involved in the multiplication right after the division, meaning LAG0 or LAG1 (not the modulus).
 # In this case, the values of the constants displayed by the Sage script (the LOWER value in parentheses and UPPER) must be inverted and multiplied by -1.
