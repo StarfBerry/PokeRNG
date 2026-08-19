@@ -70,10 +70,11 @@ def xorshift128_bdsp_blinks(state128: int, intervals: Sequence[int]) -> int:
 def get_fmt(bit_size: int, chunk_bits: int) -> Callable[[int], str]:
     b = chunk_bits
     h = (b + 3) >> 2
+    if bit_size == chunk_bits:
+        return lambda n: f"0x{n:0{h}x}"
     m = (1 << b) - 1
     s = (bit_size + b - 1) // b
-    fmt = lambda n: "({})".format(", ".join(f"0x{(n >> (b * i)) & m:0{h}x}" for i in range(s)))
-    return fmt
+    return lambda n: "({})".format(", ".join(f"0x{(n >> (b * i)) & m:0{h}x}" for i in range(s)))
 
 def print_gf2mat_in_hex(mat: Matrix, axis: int, per_line: int, chunk_bits: int | None = None):
     if axis == 0:
@@ -85,28 +86,20 @@ def print_gf2mat_in_hex(mat: Matrix, axis: int, per_line: int, chunk_bits: int |
         get_axis = lambda i: mat[:, i]
         axis_length = mat.shape[1]
 
-    if chunk_bits:
-        fmt = get_fmt(mat.shape[(axis & 1) ^ 1], chunk_bits)
-    else:
-        h = (axis_length + 3) >> 2
-        fmt = lambda a: f"0x{a:0{h}x}"
+    bit_size = mat.shape[(axis & 1) ^ 1]
+    fmt = get_fmt(bit_size, chunk_bits or bit_size)
 
     for i in range(axis_length):
         a = gf2vec_to_int(get_axis(i))
         print(fmt(a), end = "\n" if i == axis_length - 1 else ", " if (i + 1) % per_line else ",\n")
 
 def print_jump_table_in_hex(charpoly: int, size: int, per_line: int, chunk_bits: int | None = None):
-    r = charpoly.bit_length() - 1
+    bit_size = charpoly.bit_length() - 1
+    fmt = get_fmt(bit_size, chunk_bits or bit_size)
 
-    if chunk_bits:
-        fmt = get_fmt(r, chunk_bits)
-    else:
-        h = (r + 3) >> 2
-        fmt = lambda p: f"0x{p:0{h}x}"
-
-    for i in range(size):
-        p = gf2x_pow_mod(2, 1 << i, charpoly)
-        print(fmt(p), end = "\n" if i == size - 1 else ", " if (i + 1) % per_line else ",\n")
+    for i in range(min(size, bit_size)):
+        f = gf2x_pow_mod(2, 1 << i, charpoly)
+        print(fmt(f), end = "\n" if i == size - 1 else ", " if (i + 1) % per_line else ",\n")
 
 if __name__ == "__main__":
     '''
