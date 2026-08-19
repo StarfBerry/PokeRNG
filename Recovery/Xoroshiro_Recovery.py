@@ -181,7 +181,7 @@ def xoroshiro_recover_state_from_128_lsb_sequence(bits: Sequence[int]) -> tuple[
 
     return (s0, s1)
 
-# https://github.com/StarfBerry/PokeRNG/blob/193dd76a606014fe27d5d6e80ca5d12b4fd4e84c/Math/GF2_Computation.py#L170-L173
+# https://github.com/StarfBerry/PokeRNG/blob/1e91b74e5235a09c3cc369c04a771ce0b78ef7f6/Math/GF2_Computation.py#L167-L170
 XOROSHIRO_128_LSB_INV_X_ADVC_128 = (
     (0xbc3a7223e4917777, 0x7e20dc0c3a48212e), (0x8071979ce140db91, 0xe1a3d69592b1dd71),
     (0xf9c525a20f967a70, 0x5550ab49809b64c4), (0x66ff2a6ee7dc2ea8, 0x2afbf148c576abf2),
