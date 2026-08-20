@@ -5,17 +5,17 @@ from typing import Iterator
 # And a video if you want to learn more: https://www.youtube.com/watch?v=gsaV9gcLntM
 
 # The constants in the code were computed using this Sage script: https://gist.github.com/StarfBerry/6473c4e33ae73fc5b370530f694d47ab
-# Basically, the idea behind the script is to track where the vertices of a hypercube (representing the ranges of desired outputs) are sent into a reduced lattice.
-# Next, we find the minimum and maximum coordinates in each dimension to determine the bounds of the resulting parallelepiped.
-# Additionally, the user's desired outputs can be interpreted as a vertex of the hypercube, the closest one to the origin.
+# The idea behind the script is to track where the vertices of a hypercube (representing the ranges of target outputs) are mapped into a reduced lattice.
+# Next, we find the minimum and maximum coordinates in each dimension to determine the bounding box of the resulting parallelepiped.
+# Additionally, the user's target outputs can be interpreted as a vertex of the hypercube, the closest one to the origin.
 # We then compute the differences between the vector coordinates of the parallelepiped's extremes and those of the user's vertex mapped into the reduced lattice.
 # As long as the lengths of the output ranges provided by the user remain the same, the differences will remain unchanged and can be expressed as integer constants.
-# These integer constants can be added when calculating the coordinates of the user's vertex in the reduced lattice to obtain the extreme coordinates in each dimension.
+# These integer constants can be added when calculating the coordinates of the user's vertex in the reduced lattice to retrieve the extreme coordinates in each dimension.
 # In other words, the variables of the linear combinations can be bounded to find all solutions without resorting to matrix calculations or floating-point numbers at runtime.
 
 # In the two-dimension case, the linear combinations are reduced modulo one of the two variables, eliminating the need to bound the variable used as the modulus.
-# Furthermore, knowing the strict upper bound of the unknowns (2^16 in our case) allows this approach to perform fewer iterations, on average, than if we had calculated the
-# linear combinations directly.
+# Furthermore, by knowing the strict upper bound of the unknowns (2^16 in our case) and choosing the best available modulus, this approach performs fewer iterations on average
+# than if we had directly calculated the linear combinations.
 # To compute the shortest basis roughly orthogonal in 2D, we can use Lagrange's algorithm: https://cryptohack.gitbook.io/cryptobook/lattices/lll-reduction/gaussian-reduction
 # In the Sage script, a different lattice reduction algorithm is used, the BKZ algorithm, which can be applied to higher dimensions and yields the same results in 2D. 
 # However, Lagrange's algorithm was the first to be used during the implementation of the code, and it's also the oldest lattice reduction algorithm ever documented.
@@ -33,12 +33,12 @@ from typing import Iterator
 # LOWER and UPPER constants are used to bound the variables of the linear combinations in order to calculate potential solutions.
 # In the 2D case, the constants returned by the Sage script were divided by 2^16 (shifted right by 16), and additional values were added to most of them.
 # The division by 2^16 is due to the fact that the calculations involve integer divisions by the determinants of the matrices, which have been split into two sub-divisions, and
-# it's assumed that the constants have already been divided during the first sub-division.
-# The additional values were added to prevent unsigned integer overflow (for programming languages such as C++, Rust, C#, etc.) while maintaining consistency with the moduli, or
-# to allow division rounded up to the nearest integer.
+# it's assumed that the constants have already been divided during the first sub-divisions.
+# The additional values were added to allow division rounded up to the nearest integer (`+ 0xffff_ffff` and `+ 0x7fff_ffff`), or to avoid unsigned integer overflow in programming 
+# languages such as C++, Rust, C#, etc., while keeping consistency with the moduli.
 # To return to the integer divisions by the determinants, these determinants are always powers of 2 in our case, which can be positive or negative.
-# If the determinant is positive, the integer division can be performed quickly using a right bit shift.
-# To maintain this advantage even when the determinant is negative, the sign of the determinant can be transferred to other constants or variables in two different ways.
+# A positive determinant allows fast interger division via a right bit shift.
+# If the determinant is negative, we can still achieve this by transferring it's sign to other constants or variables in two ways
 # The first one is by transferring the sign to the numerator of the division, which involves inverting the operands of the subtraction inside the `tmp` variable.
 # In this case, the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the determinant was positive.
 # The second method consists of transferring the sign to the multiplier right after the division, namely the LAG0 or LAG1 constant (not the modulus).
