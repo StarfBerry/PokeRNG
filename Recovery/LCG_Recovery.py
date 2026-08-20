@@ -62,8 +62,8 @@ R_MULT = 0xEEB9EB65 # reversed multiplier constant
 R_INCR = 0xA3561A1  # reversed increment constant
 R_LAG0 = 0x7ED7 # 32471
 R_LAG1 = 0xD33 # 68321 mod 32471
-R_LOWER = 0x50F5A0B # (0x50E5A0B3C37 + 0xffff_ffff) >> 16
-R_UPPER = 0x50F40B5 # (0x50F40B53C37 >> 16)
+R_LOWER = 0x50F5A0B # (0x50E5A0BBB0E + 0xffff_ffff) >> 16
+R_UPPER = 0x50F40B4 # (0x50F40B4D464 >> 16)
 
 '''
 |          1     0 |   Lagrange   |  26579  -51463 |    *(-1)     | -26579   51463 |     Det
@@ -77,7 +77,7 @@ INCR = 0x6073 # increment constant
 LAG0 = 0x67D3 # 26579
 LAG1 = 0xC907 # 51463
 LOWER = 0x3443 # (-0x4BBCEE25 + 0x7fff_ffff) >> 16
-UPPER = 0xC34F # (0xC34F11DB >> 16)
+UPPER = 0xC34E # (0xC34E02CF >> 16)
 
 # around 1.82 iterations on average
 def LCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
@@ -150,12 +150,12 @@ R_INCR_2 = 0x4D3CB126 # reversed increment constant
 R_LAG0_2 = 0x6C31 # 27697
 
 R_LAG1_PID_2 = 0xF11 # 59251 mod 27697
-R_LOWER_PID_2 = 0x20A4F728 # (0x20A3F728F046 + 0xffff_ffff) >> 16
-R_UPPER_PID_2 = 0x20A49DE2 # (0x20A49DE2F046 >> 16)
+R_LOWER_PID_2 = 0x20A4F729 # (0x20A3F7295C77 + 0xffff_ffff) >> 16
+R_UPPER_PID_2 = 0x20A49DE2 # (0x20A49DE2B5BD >> 16)
 
 R_LAG1_IVS_2 = 0x2E90 # -43474 mod 27697
-R_LOWER_IVS_2 = 0x1574621D # ((-0x20A49DE2F046 + 0x7fff_ffff) >> 16) + (27697 << 15)
-R_UPPER_IVS_2 = 0x157488D7 # (-0x20A3F728F046 >> 16) + (27697 << 15)
+R_LOWER_IVS_2 = 0x1574621D # ((-0x20A49DE2B5BD + 0x7fff_ffff) >> 16) + (27697 << 15)
+R_UPPER_IVS_2 = 0x157488D6 # (-0x20A3F7295C77 >> 16) + (27697 << 15)
 
 # around 1.54 iterations on average
 def LCRNG_recover_pid_seeds_with_skip(pid: int) -> Iterator[int]:
@@ -205,6 +205,54 @@ def LCRNG_recover_ivs_seeds_with_skip(hp: int, atk: int, dfs: int, spa: int, spd
 ################################################################################################################################################################################
 
 '''
+In My Pokémon Ranch, PIDs are generated from a time base register, meaning there is no correlation between PID and IVs.
+However, it's still possible to check if an IV combination is valid.
+IVs are generated as following:
+
+first  = (seed >> 16) & 0x7fff
+second = (MRNG(seed) >> 16) & 0x7fff
+third  = (MRNG^2(seed) >> 16) & 0x7fff
+
+rnd32 = ((second << 30) | (first << 15) | third) & 0xffff_ffff
+
+ivs = [(rnd32 >> (5 * i)) & 31 for i in range(6)] # hp, atk, dfs, spe, spa, spd
+
+As we can see, only `first` and `third` are used to generate the IVs.
+Furthermore, since LCRNG^2 and MRNG^2 share the same multiplier, we can use certain constants defined previously.
+'''
+
+RANCH_R_INCR = 0x8C319932 # reversed increment constant
+RANCH_R_LOWER = 0x30F18357 # ((-0x5277CA83009 + 0x7fff_ffff) >> 16) + (27697 << 15)
+RANCH_R_UPPER = 0x30F1AA11 # (-0x526D5EED6C3 >> 16) + (27697 << 15)
+
+# around 3.08 iterations on average
+def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
+    first = ((spd << 10) | (spa << 5) | spe) << 16
+    third = ((dfs << 10) | (atk << 5) | hp) << 16
+
+    tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
+    lo = (tmp + RANCH_R_LOWER) >> 15
+    up = (tmp + RANCH_R_UPPER) >> 15
+
+    # each loop performs at most 3 iterations
+    for lbits in range((lo * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
+        seed = ((third | lbits) * R_MULT_2 + RANCH_R_INCR) & 0xffffffff
+        if (seed & 0x7fff0000) == first:
+            yield seed
+            yield seed ^ 0x80000000
+
+    # The range of the bounded variable is approximately 1.30.
+    # Therefore, in about 30% of cases, we will enter the second loop.
+    if lo != up:
+        for lbits in range((up * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
+            seed = ((third | lbits) * R_MULT_2 + RANCH_R_INCR) & 0xffffffff
+            if (seed & 0x7fff0000) == first:
+                yield seed
+                yield seed ^ 0x80000000
+
+################################################################################################################################################################################
+
+'''
 |          1     0 |   Lagrange   | -59601 -35210 |    *(-1)     | 59601   35210 |     Det
 |                  | ===========> |               | ===========> |               | ===========> -2^32
 | 0xB9B33155  2^32 |              | -20069  60206 |              | 20069  -60206 |
@@ -221,13 +269,13 @@ GC_R_INCR = 0xA170F641 # reversed increment constant
 
 GC_R_LAG0_PID = 0xE8D1 # 59601
 GC_R_LAG1_PID = 0x5F47 # -35210 mod 59601
-GC_R_LOWER_PID = 0x55FF8537 # ((-0x92D27AC8F311 + 0xffff_ffff) >> 16) + (59601 << 16)
-GC_R_UPPER_PID = 0x55FFBC6D # (-0x92D14392F311 >> 16) + (59601 << 16)
+GC_R_LOWER_PID = 0x55FF8537 # ((-0x92D27AC8A4AC + 0xffff_ffff) >> 16) + (59601 << 16)
+GC_R_UPPER_PID = 0x55FFBC6C # (-0x92D14393DBE2 >> 16) + (59601 << 16)
 
 GC_R_LAG0_IVS = 0x44C5 # 17605
 GC_R_LAG1_IVS = 0xE8D1 # 59601
-GC_R_LOWER_IVS = 0x1E694392 # (0x1E68C392F311 + 0x7fff_ffff) >> 16
-GC_R_UPPER_IVS = 0x1E69FAC8 # (0x1E69FAC8F311 >> 16)
+GC_R_LOWER_IVS = 0x1E694393 # (0x1E68C393DBE2 + 0x7fff_ffff) >> 16
+GC_R_UPPER_IVS = 0x1E69FAC8 # (0x1E69FAC8A4AC >> 16)
 
 # around 1.34 iterations on average
 def GCRNG_recover_pid_seeds(pid: int) -> Iterator[int]:
@@ -328,7 +376,7 @@ LOTTO_R_MULT = 0x9638806D # reversed multiplier constant
 LOTTO_R_INCR = 0xC6D9438B # reversed increment constant
 LOTTO_R_LAG0 = 0x4295 # -46423 mod 63468
 LOTTO_R_LAG1 = 0xF7EC # 63468
-LOTTO_R_LOWER = 0xC0928805 # (0xC09188056124 + 0xffff_ffff) >> 16
+LOTTO_R_LOWER = 0xC0928806 # (0xC0918806C994 + 0xffff_ffff) >> 16
 LOTTO_R_UPPER = 0xC092F075 # (0xC092F0756124 >> 16)
 
 # around 1.46 iterations on average
@@ -358,54 +406,6 @@ def recover_group_seeds_from_lotto_numbers(n0: int, n1: int) -> Iterator[int]:
 ################################################################################################################################################################################
 
 '''
-In My Pokémon Ranch, PIDs are generated from a time base register, meaning there is no correlation between PID and IVs.
-However, it's still possible to check if an IV combination is valid.
-IVs are generated as following:
-
-first  = (seed >> 16) & 0x7fff
-second = (MRNG(seed) >> 16) & 0x7fff
-third  = (MRNG^2(seed) >> 16) & 0x7fff
-
-rnd32 = ((second << 30) | (first << 15) | third) & 0xffff_ffff
-
-ivs = [(rnd32 >> (5 * i)) & 31 for i in range(6)] # hp, atk, dfs, spe, spa, spd
-
-As we can see, only `first` and `third` are used to generate the IVs.
-Furthermore, since LCRNG^2 and MRNG^2 share the same multiplier, we can use certain constants defined previously.
-'''
-
-RANCH_R_INCR = 0x8C319932 # reversed increment constant
-RANCH_R_LOWER = 0x30F18357 # ((-0x5277CA86A92 + 0x7fff_ffff) >> 16) + (27697 << 15)
-RANCH_R_UPPER = 0x30F1AA11 # (-0x526D5EE6A92 >> 16) + (27697 << 15)
-
-# around 3.08 iterations on average
-def ranch_recover_ivs_seeds(hp: int, atk: int, dfs: int, spa: int, spd: int, spe: int) -> Iterator[int]:
-    first = ((spd << 10) | (spa << 5) | spe) << 16
-    third = ((dfs << 10) | (atk << 5) | hp) << 16
-
-    tmp = (((first - third * R_MULT_2) >> 16) & 0xffff) * R_LAG0_2
-    lo = (tmp + RANCH_R_LOWER) >> 15
-    up = (tmp + RANCH_R_UPPER) >> 15
-
-    # each loop performs at most 3 iterations
-    for lbits in range((lo * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
-        seed = ((third | lbits) * R_MULT_2 + RANCH_R_INCR) & 0xffffffff
-        if (seed & 0x7fff0000) == first:
-            yield seed
-            yield seed ^ 0x80000000
-
-    # The range of the bounded variable is approximately 1.30.
-    # Therefore, in about 30% of cases, we will enter the second loop.
-    if lo != up:
-        for lbits in range((up * R_LAG1_IVS_2) % R_LAG0_2, 0x10000, R_LAG0_2):
-            seed = ((third | lbits) * R_MULT_2 + RANCH_R_INCR) & 0xffffffff
-            if (seed & 0x7fff0000) == first:
-                yield seed
-                yield seed ^ 0x80000000
-
-################################################################################################################################################################################
-
-'''
 |                  1     0 |   Lagrange   | -3070150413  3572620529 |    *(-1)     | 3070150413 -3572620529 |     Det
 |                          | ===========> |                         | ===========> |                        | ===========> 2^64
 | 0xDEDCEDAE9638806D  2^64 |              | -1993949321 -3688131939 |              | 1993949321  3688131939 |
@@ -416,8 +416,8 @@ BW_R_MULT = 0xDEDCEDAE9638806D # reversed multiplier constant
 BW_R_INCR = 0x9B1AE6E9A384E6F9 # reversed increment constant
 BW_R_LAG0 = 0xB6FEC70D # 3070150413
 BW_R_LAG1 = 0x990BB129 # -3572620529 mod 3070150413
-BW_R_LOWER = 0x481F49988938ADF4 # ((-0x6EDF7D7576C7520BCE5949A5 + 0xffff_ffff_ffff_ffff) >> 32) + (3070150413 << 32)
-BW_R_UPPER = 0x481F4998B710B5F4 # (-0x6EDF7D7448EF4A0BCE5949A5 >> 32) + (3070150413 << 32)
+BW_R_LOWER = 0x481F49988938AD6B # ((-0x6EDF7D7576C752945780091C + 0xffff_ffff_ffff_ffff) >> 32) + (3070150413 << 32)
+BW_R_UPPER = 0x481F4998B710B500 # (-0x6EDF7D7448EF4AFF855810B2 >> 32) + (3070150413 << 32)
 
 # around 1.65 iterations on average
 def BWRNG_recover_states_from_2x32_bits(out0: int, out1: int) -> Iterator[int]:
@@ -463,8 +463,8 @@ M = (0x343FD, 0xA9FC6809, 0x45C82BE5, 0xDDFF5051, 0x284A930D)
 I = (0x269EC3, 0x1E278E7A, 0xD2F65B55, 0x98520C4, 0xA2974C77)
 
 # Constants to bound the variables of the linear combinations for calculating potential solutions
-CHANNEL_LOWER = (0x2AB966D1C2, 0x2169A3AA47, -0x5049D5FDC, -0x2AACDA387, 0xFE7FFFFFF, -0x898000001)
-CHANNEL_UPPER = (0x2E8966D1C3, 0x23D9A3AA48, -0x3549D5FDB, -0xDACDA386, 0x1098000000, -0x7E8000000)
+CHANNEL_LOWER = (0x2AB966D211, 0x2169A3AAAE, -0x5049D5FC3, -0x2AACDA35E, 0xFE800001A, -0x897FFFFE6)
+CHANNEL_UPPER = (0x2E8966D178, 0x23D9A3AA41, -0x3549D6018, -0xDACDA3B7, 0x1097FFFFE5, -0x7E800001B)
 
 # Alternative implementation where all variables involved in the nested loop are 32-bit unsigned integers
 # https://github.com/kwsch/PKHeX/issues/4844#issuecomment-5124474121
@@ -597,11 +597,11 @@ if __name__ == "__main__":
 
     #test_recover_ivs_seeds(ranch_recover_ivs_seeds, 0xC2A29A69, 0xD3DC167E, 10_000_000, True)
 
-    #test_recover_group_seeds_from_lotto_numbers(10_000_000)
-
     #test_recover_pid_seeds(GCRNG_recover_pid_seeds, 0x343FD, 0x269EC3, 10_000_000, True)
 
     #test_recover_ivs_seeds(GCRNG_recover_ivs_seeds, 0x343FD, 0x269EC3, 10_000_000)
+
+    #test_recover_group_seeds_from_lotto_numbers(10_000_000)
 
     #test_BWRNG_recover_states_from_2x32_bits(10_000_000)
 
