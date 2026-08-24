@@ -16,7 +16,7 @@ def gf2vec_to_int(vec: Vector) -> int:
     return sum((int(b) & 1) << i for i, b in enumerate(vec))
 
 def gf2mat_from_func(f: Callable[[int], int], row: int, col: int) -> Matrix:
-    """Returns the matrix representation of the function f, assuming f is linear over GF(2)"""
+    """Returns the matrix representation of the function f, assuming f is linear over GF(2)."""
     mat = np.zeros((row, col), np.uint8)
 
     for i in range(col):
@@ -110,14 +110,16 @@ def gf2mat_pow(mat: Matrix, n: int) -> Matrix:
 
     while n:
         if n & 1:
-            res = (res @ base) & 1
-        base = (base @ base) & 1
+            res @= base
+        base @= base
         n >>= 1
+
+    res &= 1
 
     return res
 
 def gf2mat_constraints(mat: Matrix) -> tuple[int, int]:   
-    """Computes the constraints to check if a vector lives in the column space of the given matrix."""
+    """Computes the constraints to check if a vector belongs to the column space of the given matrix."""
     _, terms, rank = gf2mat_reduced_row_echelon_form(mat)
 
     zeros = cartesian_eq = 0

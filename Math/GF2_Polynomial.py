@@ -1,6 +1,6 @@
 # Polynomials over GF(2), formally written as GF(2)[X], can be encoded as positive integers where each bit is a coefficient.
 # For example: x^3 + x^2 + 1 can be represented as 0b1101 = 13.
-# Then we can implement arithmetic operations on them using bitwise operators.
+# We can then implement arithmetic operations on them using bitwise operators.
 
 from typing import Iterator, Sequence
 from math import isqrt
@@ -112,8 +112,8 @@ def gf2x_barrett_consts(m: int) -> tuple[int, int]:
 
 def gf2x_barrett_reduction(f: int, mu: int, k: int, m: int):
     """Calculates f(x) mod m(x) using Barrett reduction, assuming deg(f) <= 2 * deg(m)."""
-    q = gf2x_mul_skip(f, mu) >> k # <==> gf2x_div(f, m), no correction is necessary in GF(2)[X]
-    return f ^ gf2x_mul_skip(q, m)
+    q = gf2x_mul_skip(f, mu) >> k # <==> gf2x_div(f, m)
+    return f ^ gf2x_mul_skip(q, m) # no correction is necessary in GF(2)[X]
 
 def gf2x_mul_mod(f: int, g: int, m: int) -> int:
     """Calculates f(x) * g(x) modulo m(x)."""
@@ -191,7 +191,7 @@ def gf2x_egcd(f: int, g: int) -> tuple[int, int, int]:
 def gf2x_mod_inv(f: int, m: int) -> int:
     """Calculates the modular multiplicative inverse of f(x) modulo m(x)."""
     inv, _, gcd = gf2x_egcd(f, m)
-    assert gcd == 1, "f(x) and m(x) must be relatively prime over GF(2)[X]."
+    assert gcd == 1, "f(x) and m(x) must be relatively prime in GF(2)[X]."
     return gf2x_mod(inv, m)
 
 def distinct_primes(n: int) -> Iterator[int]:   
@@ -208,7 +208,7 @@ def distinct_primes(n: int) -> Iterator[int]:
     p = 7
     s = isqrt(n)
     i = 1
-    gap = (6, 4, 2, 4, 2, 4, 6, 2) # gaps between prime numbers greater than 5 modulo 30 
+    gaps = (6, 4, 2, 4, 2, 4, 6, 2) # gaps between primes > 5 modulo 30 
 
     while p <= s:
         if n % p == 0:
@@ -217,7 +217,7 @@ def distinct_primes(n: int) -> Iterator[int]:
                 n //= p
             s = isqrt(n)
 
-        p += gap[i & 7] 
+        p += gaps[i & 7] 
         i += 1
 
     if n != 1:

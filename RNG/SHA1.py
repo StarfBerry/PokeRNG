@@ -190,7 +190,7 @@ def calc_week_day(year: int, month: int, day: int) -> int:
     year -= month < 3
     return (year + (year >> 2) - (year // 100) + (year // 400) + T[month - 1] + day) % 7
 
-# Binary-Coded Decimal for integers < 100
+# Binary Coded Decimal for positive integers < 100
 def calc_BCD(val: int) -> int:
     return ((val // 10) << 4) | (val % 10)
 
