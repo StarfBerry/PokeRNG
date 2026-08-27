@@ -1,6 +1,6 @@
 # Polynomials over GF(2), formally written as GF(2)[X], can be encoded as positive integers where each bit is a coefficient.
 # For example: x^3 + x^2 + 1 can be represented as 0b1101 = 13.
-# We can then implement arithmetic operations on them using bitwise operators.
+# We can then perform arithmetic operations on them using bitwise operators.
 
 from typing import Iterator, Sequence
 from math import isqrt
@@ -38,6 +38,28 @@ def gf2x_mul_skip(f: int, g: int) -> int:
         f ^= 1 << d
 
     return res
+
+def gf2x_karatsuba_mul(f: int, g: int) -> int:
+    """Calculates f(x) * g(x) using the Karatsuba algorithm."""
+    l = max(f, g).bit_length()
+
+    if l <= 4096:
+        return gf2x_mul_skip(f, g)
+
+    k = (l + 1) >> 1
+    m = (1 << k) - 1
+
+    f0 = f & m
+    f1 = f >> k
+
+    g0 = g & m
+    g1 = g >> k
+
+    p0 = gf2x_karatsuba_mul(f0, g0)
+    p1 = gf2x_karatsuba_mul(f1, g1)
+    p2 = gf2x_karatsuba_mul(f0 ^ f1, g0 ^ g1)
+
+    return (p1 << (k << 1)) ^ ((p2 ^ p0 ^ p1) << k) ^ p0
 
 def gf2x_prod(*args: int) -> int:
     """Calculates the product of the polynomials passed as arguments."""
@@ -111,7 +133,7 @@ def gf2x_barrett_consts(m: int) -> tuple[int, int]:
     return (k, mu)
 
 def gf2x_barrett_reduction(f: int, mu: int, k: int, m: int):
-    """Calculates f(x) mod m(x) using Barrett reduction, assuming deg(f) <= 2 * deg(m)."""
+    """Calculates f(x) modulo m(x) using Barrett reduction, assuming deg(f) <= 2 * deg(m)."""
     q = gf2x_mul_skip(f, mu) >> k # <==> gf2x_div(f, m)
     return f ^ gf2x_mul_skip(q, m) # no correction is necessary in GF(2)[X]
 
@@ -241,7 +263,7 @@ def gf2x_is_irreducible(f: int) -> bool:
 
     return gf2x_pow_mod(2, 1 << d, f) == 2
 
-def gf2_berlekamp_massey(bits: Sequence[int]) -> int:
+def gf2x_berlekamp_massey(bits: Sequence[int]) -> int:
     """Calculates the shortest linear-feedback shift register (LFSR) of the given binary output sequence."""
     assert len(bits) & 1 == 0, "The length of the bits sequence must be even."
 
@@ -249,7 +271,7 @@ def gf2_berlekamp_massey(bits: Sequence[int]) -> int:
     L = mask = 0
 
     for n, i in enumerate(reversed(range(len(bits)))):
-        d = bits[i] ^ ((C >> 1) & mask).bit_count() & 1
+        d = (bits[i] ^ ((C >> 1) & mask).bit_count()) & 1
         mask = (mask << 1) | bits[i]
 
         if d == 0:

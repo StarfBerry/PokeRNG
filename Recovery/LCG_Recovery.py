@@ -11,7 +11,7 @@ from typing import Iterator
 # We then compute the differences between the vector coordinates of the parallelepiped's extremes and those of the user's vertex mapped into the reduced lattice.
 # As long as the lengths of the output ranges provided by the user remain the same, the differences will remain unchanged and can be expressed as integer constants.
 # These integer constants can be added when calculating the coordinates of the user's vertex in the reduced lattice to retrieve the extreme coordinates in each dimension.
-# In other words, the variables of the linear combinations can be bounded to find all solutions without resorting to matrix calculations or floating-point numbers at runtime.
+# In other words, the variables of the linear combinations can be bounded to find all the solutions without resorting to matrix calculations or floating-point numbers at runtime.
 
 # In the two-dimension case, the linear combinations are reduced modulo one of the two variables, eliminating the need to bound the variable used as the modulus.
 # Furthermore, by knowing the strict upper bound of the unknowns (2^16 in our case) and choosing the best available modulus, this approach performs fewer iterations on average
@@ -34,17 +34,17 @@ from typing import Iterator
 # In the 2D case, the constants returned by the Sage script were divided by 2^16 (shifted right by 16), and additional values were added to most of them.
 # The division by 2^16 is due to the fact that the calculations involve integer divisions by the determinants of the matrices, which have been split into two sub-divisions, and
 # it's assumed that the constants have already been divided during the first sub-divisions.
-# The additional values were added to allow division rounded up to the nearest integer (`+ 0xffff_ffff` and `+ 0x7fff_ffff`), or to avoid unsigned integer overflow in programming 
+# The additional values were added to allow division rounded up to the nearest integer (`+ 0xffff_ffff` or `+ 0x7fff_ffff`), or to avoid unsigned integer overflow in programming 
 # languages such as C++, Rust, C#, etc., while keeping consistency with the moduli.
 # To return to the integer divisions by the determinants, these determinants are always powers of 2 in our case, which can be positive or negative.
-# A positive determinant allows fast interger division via a right bit shift.
+# A positive determinant allows fast integer division via a right bit shift.
 # If the determinant is negative, we can still achieve this by transferring it's sign to other constants or variables in two ways
-# The first one is by transferring the sign to the numerator of the division, which involves inverting the operands of the subtraction inside the `tmp` variable.
-# In this case, the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the determinant was positive.
+# The first one is by transferring the sign to the numerator of the division, which involves swapping the operands of the subtraction inside the `tmp` variable.
+# In this case, the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the denominator was positive.
 # The second method consists of transferring the sign to the multiplier right after the division, namely the LAG0 or LAG1 constant (not the modulus).
-# In this case, the values of the constants displayed by the Sage script (the LOWER value in parentheses and UPPER) must be inverted and multiplied by -1.
+# In this case, the values of the constants displayed by the Sage script (the LOWER value in parentheses and UPPER) must be swapped and multiplied by -1.
 # The optimal approach is the one that produces the smallest values and maximize the number of calculations/variables that can fit into 32 bits.
-# Similarly, when the determinant is positive, we can invert the subtraction operands and the values displayed by the script, while reversing the signs of all constants except
+# Similarly, when the determinant is positive, we can swap the subtraction operands and the values displayed by the script, while flipping the signs of all the constants except
 # the modulus, in order to obtain a new set of constants that may be more optimal than the old one.
 
 # The bitmasks `& 0xffff` in the `tmp` variables can be ignored, they are used only to simulate 32-bit calculations in Python.

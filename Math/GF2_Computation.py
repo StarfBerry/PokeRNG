@@ -105,7 +105,7 @@ if __name__ == "__main__":
     '''
     rng = MT(0xdeadbeef)
     bits = [rng.next_u32() & 1 for _ in range((624 * 32 - 31) * 2)]
-    charpoly = gf2_berlekamp_massey(bits)
+    charpoly = gf2x_berlekamp_massey(bits)
     path = os.path.join(PATH, "charpoly_mt.txt")
     with open(path, "w") as file:
         file.write(hex(charpoly))
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     rng = TinyMT(0xdeadbeef)
     bits = [rng.next_u32() & 1 for _ in range(127 * 2)]
     T = gf2mat_from_func(tinymt_next, 128, 128)
-    charpoly = gf2_berlekamp_massey(bits)
+    charpoly = gf2x_berlekamp_massey(bits)
     zeros, cartesian_eq = gf2mat_constraints(T)
     print(hex(zeros), hex(cartesian_eq)) # 0x0 0x3fffffffffffff8000000080000000
     print(hex(charpoly)) # 0xd8524022ed8dff4a8dcc50c798faba43
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         rng.twist()
         for i in range(0, 624, 4):
             bits.append(rng.state[i] & 1)
-    charpoly = gf2_berlekamp_massey(bits)
+    charpoly = gf2x_berlekamp_massey(bits)
     path = os.path.join(PATH, "charpoly_sfmt.txt")
     with open(path, "w") as file:
         file.write(hex(charpoly))
@@ -137,14 +137,14 @@ if __name__ == "__main__":
     '''
     rng = Xoroshiro128Plus(0xdeadbeef)
     bits = [rng.next_u64() & 1 for _ in range(128 * 2)]
-    charpoly = gf2_berlekamp_massey(bits)
+    charpoly = gf2x_berlekamp_massey(bits)
     print(hex(charpoly)) # 0x10008828e513b43d5095b8f76579aa001
     '''
 
     '''
     rng = Xorshift128(0xdeadbeef)
     bits = [rng.next() & 1 for _ in range(128 * 2)]
-    charpoly = gf2_berlekamp_massey(bits)
+    charpoly = gf2x_berlekamp_massey(bits)
     print(hex(charpoly)) # 0x1000000010046d8b3f985d65ffd3c8001
     '''
 
