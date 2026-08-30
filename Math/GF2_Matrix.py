@@ -119,7 +119,7 @@ def gf2mat_pow(mat: Matrix, n: int) -> Matrix:
     return res
 
 def gf2mat_constraints(mat: Matrix) -> tuple[int, int]:   
-    """Computes the constraints to check if a vector belongs to the column space of the given matrix."""
+    """Computes constraints to check if a vector belongs to the column space of the given matrix."""
     _, terms, rank = gf2mat_reduced_row_echelon_form(mat)
 
     zeros = cartesian_eq = 0
@@ -130,7 +130,7 @@ def gf2mat_constraints(mat: Matrix) -> tuple[int, int]:
         else:
             cartesian_eq ^= terms[i]
 
-    # These constraints can be checked using bitmasks and a XOR sum over a vector represented as an integer.
+    # These constraints can be verified using bitmasks and a XOR sum over a vector represented as an integer.
     # Like this: (vec & zeros) == 0 and ((vec & cartesian_eq).bit_count() & 1) == 0
     return (zeros, cartesian_eq)
 

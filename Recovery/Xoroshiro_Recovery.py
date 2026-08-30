@@ -181,7 +181,7 @@ def xoroshiro_recover_state_from_128_lsb_sequence(bits: Sequence[int]) -> tuple[
 
     return (s0, s1)
 
-# https://github.com/StarfBerry/PokeRNG/blob/1e91b74e5235a09c3cc369c04a771ce0b78ef7f6/Math/GF2_Computation.py#L167-L170
+# https://github.com/StarfBerry/PokeRNG/blob/80ec4536a4627de2ab020077566422f238d177ac/Math/GF2_Computation.py#L167-L170
 XOROSHIRO_128_LSB_INV_X_ADVC_128 = (
     (0xbc3a7223e4917777, 0x7e20dc0c3a48212e), (0x8071979ce140db91, 0xe1a3d69592b1dd71),
     (0xf9c525a20f967a70, 0x5550ab49809b64c4), (0x66ff2a6ee7dc2ea8, 0x2afbf148c576abf2),
@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
     from random import getrandbits
 
-    def test_xoroshiro_recover_seeds(n: int = 10_000):
+    def test_xoroshiro_recover_seeds(n: int):
         rng = Xoroshiro128Plus(0)
 
         for _ in range(n):
@@ -268,7 +268,7 @@ if __name__ == "__main__":
 
             assert seed in xoroshiro_recover_seeds(out0, out1), f"{seed = :016X}, {out0 = :08X}, {out1 = :08X}"
 
-    def test_xoroshiro_recover_seeds_with_skip(n: int = 10_000):
+    def test_xoroshiro_recover_seeds_with_skip(n: int):
         rng = Xoroshiro128Plus(0)
 
         for _ in range(n):
@@ -281,7 +281,7 @@ if __name__ == "__main__":
 
             assert seed in xoroshiro_recover_seeds_with_skip(ec, pid), f"{seed = :016X}, {ec = :08X}, {pid = :08X}"
 
-    def test_xoroshiro_recover_state_from_128_lsb_sequence(n: int = 10_000):
+    def test_xoroshiro_recover_state_from_128_lsb_sequence(n: int):
         rng = Xoroshiro128Plus(0)
         bits = [0] * 128
 
@@ -299,8 +299,8 @@ if __name__ == "__main__":
             assert state == state_, f"{state = }, {state_ = }"
 
 
-    #test_xoroshiro_recover_seeds()
+    #test_xoroshiro_recover_seeds(100_000)
 
-    #test_xoroshiro_recover_seeds_with_skip()
+    #test_xoroshiro_recover_seeds_with_skip(10_000)
 
-    #test_xoroshiro_recover_state_from_128_lsb_sequence()
+    #test_xoroshiro_recover_state_from_128_lsb_sequence(10_000)

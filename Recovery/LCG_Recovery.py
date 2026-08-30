@@ -38,9 +38,9 @@ from typing import Iterator
 # languages such as C++, Rust, C#, etc., while keeping consistency with the moduli.
 # To return to the integer divisions by the determinants, these determinants are always powers of 2 in our case, which can be positive or negative.
 # A positive determinant allows fast integer division via a right bit shift.
-# If the determinant is negative, we can still achieve this by transferring it's sign to other constants or variables in two ways
-# The first one is by transferring the sign to the numerator of the division, which involves swapping the operands of the subtraction inside the `tmp` variable.
-# In this case, the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the denominator was positive.
+# If the determinant is negative, we can still achieve this by transferring it's sign to other constants or variables in two ways.
+# The first one is by transferring the sign to the numerator of the division, which involves swapping the operands of the subtraction inside the `tmp` variable (<==> `-tmp`).
+# In this case, the constants LOWER/UPPER do not need to be changed because the Sage script calculated them assuming the sign was transferred to the numerator.
 # The second method consists of transferring the sign to the multiplier right after the division, namely the LAG0 or LAG1 constant (not the modulus).
 # In this case, the values of the constants displayed by the Sage script (the LOWER value in parentheses and UPPER) must be swapped and multiplied by -1.
 # The optimal approach is the one that produces the smallest values and maximize the number of calculations/variables that can fit into 32 bits.

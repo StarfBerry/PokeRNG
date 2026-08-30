@@ -55,7 +55,7 @@ def mt_recover_seed_from_state(state: list[int], max_advc: int = 10_000) -> int 
 def mt_untemper(t: int) -> int:
     t ^= t >> 18
     t ^= (t << 15) & 0xEFC60000
-    t ^= (t <<  7) & 0x9D2C5680
+    t ^= (t << 7) & 0x9D2C5680
     t ^= (t << 14) & 0x94284000
     t ^= (t << 28) & 0x10000000
     t ^= t >> 11
@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     from random import getrandbits, randrange
 
-    def test_mt_recover_seed_from_state(n: int = 10_000):
+    def test_mt_recover_seed_from_state(n: int):
         mt = MT(0)
 
         for _ in range(n):
@@ -112,7 +112,7 @@ if __name__ == "__main__":
             seed_ = mt_recover_seed_from_state(mt.state.copy())
             assert seed == seed_, f"{seed = }, {seed_ = }, {advc = }"
 
-    def test_mt_recover_seed_from_2_outputs(n: int = 10_000):
+    def test_mt_recover_seed_from_2_outputs(n: int):
         mt = MT(0)
 
         for _ in range(n):
@@ -129,6 +129,6 @@ if __name__ == "__main__":
             assert seed == seed_, f"{seed = }, {seed_ = }, {ofs = }"
 
 
-    #test_mt_recover_seed_from_state()
+    #test_mt_recover_seed_from_state(10_000)
     
-    #test_mt_recover_seed_from_2_outputs()
+    #test_mt_recover_seed_from_2_outputs(10_000)

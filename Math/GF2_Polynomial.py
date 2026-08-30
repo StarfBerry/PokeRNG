@@ -41,12 +41,13 @@ def gf2x_mul_skip(f: int, g: int) -> int:
 
 def gf2x_karatsuba_mul(f: int, g: int) -> int:
     """Calculates f(x) * g(x) using the Karatsuba algorithm."""
-    l = max(f, g).bit_length()
+    fl = f.bit_length()
+    gl = g.bit_length()
 
-    if l <= 4096:
+    if min(fl, gl) <= 4096:
         return gf2x_mul_skip(f, g)
 
-    k = (l + 1) >> 1
+    k = (max(fl, gl) + 1) >> 1
     m = (1 << k) - 1
 
     f0 = f & m

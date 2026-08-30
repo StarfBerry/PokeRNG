@@ -1,6 +1,6 @@
 from typing import Sequence
 
-# https://github.com/StarfBerry/PokeRNG/blob/1e91b74e5235a09c3cc369c04a771ce0b78ef7f6/Math/GF2_Computation.py#L119-L120
+# https://github.com/StarfBerry/PokeRNG/blob/80ec4536a4627de2ab020077566422f238d177ac/Math/GF2_Computation.py#L119-L120
 def tinymt_equation(s0: int, s1: int, s2: int, s3: int) -> int:
     """Equation to check if a state can be generated from the recurrence relation of TinyMT."""
     eq = (s0 >> 31) ^ (s1 >> 31) ^ s2.bit_count() ^ (s3 & 0x3fffff).bit_count()
@@ -83,7 +83,7 @@ def tinymt_recover_state_from_127_lsb_sequence(bits: Sequence[int]) -> tuple[int
 
     return (s0, s1, s2, s3)
 
-# https://github.com/StarfBerry/PokeRNG/blob/1e91b74e5235a09c3cc369c04a771ce0b78ef7f6/Math/GF2_Computation.py#L158-L164
+# https://github.com/StarfBerry/PokeRNG/blob/80ec4536a4627de2ab020077566422f238d177ac/Math/GF2_Computation.py#L158-L164
 TINYMT_127_LSB_INV_X_ADVC_124 = (
     (0x5bad2a66, 0x680d9666, 0x78978f33, 0x48fc5d16), (0x90acdb77, 0x33a0bc00, 0x109a1955, 0xc916aed0),
     (0xe5135044, 0x90acdb77, 0x33a0bc00, 0xfddaa506), (0x42ac1733, 0xe5135044, 0x90acdb77, 0xc74bfe04),
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     from random import getrandbits, randrange
     
-    def test_tinymt_recover_seed_from_state(n: int = 10_000):
+    def test_tinymt_recover_seed_from_state(n: int):
         rng = TinyMT(0)
         
         for _ in range(n):
@@ -171,7 +171,7 @@ if __name__ == "__main__":
             seed_ = tinymt_recover_seed_from_state(*rng.state)
             assert seed == seed_, f"{seed = }, {seed_ = }, {advc = }"
 
-    def test_tinymt_recover_state_from_127_lsb_sequence(n: int = 10_000):
+    def test_tinymt_recover_state_from_127_lsb_sequence(n: int):
         rng = TinyMT(0)
         bits = [0] * 127
 
@@ -195,6 +195,6 @@ if __name__ == "__main__":
             assert state == state_, f"{state = }, {state_ = }"
 
 
-    #test_tinymt_recover_seed_from_state()
+    #test_tinymt_recover_seed_from_state(10_000)
     
-    #test_tinymt_recover_state_from_127_lsb_sequence()
+    #test_tinymt_recover_state_from_127_lsb_sequence(10_000)

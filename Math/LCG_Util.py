@@ -17,13 +17,13 @@ def inv_mod_pow_2(n: int, p: int) -> int:
     return x % p2
 
 def reverse_lcg32(mult: int, incr: int) -> tuple[int, int]:
-    """Calculates the multiplier and increment of a 32-bit LCG to move backward in the state sequence."""
+    """Calculates the multiplier and increment to move backward in the state sequence of a 32-bit LCG."""
     rmult = inv_mod_pow_2(mult, 32)
     rincr = (-incr * rmult) & 0xffffffff
     return (rmult, rincr)
 
 def reverse_lcg64(mult: int, incr: int) -> tuple[int, int]:
-    """Calculates the multiplier and increment of a 64-bit LCG to move backward in the state sequence."""
+    """Calculates the multiplier and increment to move backward in the state sequence of a 64-bit LCG."""
     rmult = inv_mod_pow_2(mult, 64)
     rincr = (-incr * rmult) & 0xffffffffffffffff
     return (rmult, rincr)
