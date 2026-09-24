@@ -32,32 +32,27 @@ def dolphin_seconds_distance(calibration_seed: int, seed: int) -> int:
         return -1 
     return (0x4e4069 * ((seed - calibration_seed) >> 5)) & 0x7ffffff
 
-def gcrng_prev(seed: int) -> int:
-    return (seed * 0xb9b33155 + 0xa170f641) & 0xffffffff
-
 def gcrng_prev2(seed: int) -> int:
-    return (seed * 0xe05fa639 + 0x3882ad6) & 0xffffffff
+    return (0xe05fa639 * seed + 0x3882ad6) & 0xffffffff
 
-def gcrng_jump_backward(seed: int, n: int) -> int:
+def gcrng_jump_back(seed: int, n: int) -> int:
     mult = pow(0xb9b33155, n, 1 << 32)
     incr = (0xa170f641 * (pow(0xb9b33155, n, 0xb9b33154 << 32) - 1) // 0xb9b33154) & 0xffffffff
     return (mult * seed + incr) & 0xffffffff
 
 if __name__ == "__main__":
+    assert DT_LIMIT > DT_CALIBRATION, "Invalid date-time limit."
     delta_dt = DT_LIMIT - DT_CALIBRATION
+
     delta_sec = int(delta_dt.total_seconds())
     assert delta_sec < 2**27, "The seconds range must be smaller than 2^27."
 
-    seed = gcrng_jump_backward(TARGET_SEED, MIN_ADVC)
-    
-    # Different parity, LCGs alternate between odd and even states.
-    # With this, the least significant bit matches, and we will able to advance through the RNG sequence 2 by 2.
-    if (seed & 1) != (CALIBRATION_SEED & 1):
-        seed = gcrng_prev(seed)
-        MIN_ADVC += 1
+    # LCGs alternate between odd and even states, and we want the LSB of candidate seeds to match the calibration seed's.
+    # With this, the LSB will match after the jump back, and we will be able to advance through the RNG sequence 2 by 2.
+    MIN_ADVC += (TARGET_SEED ^ MIN_ADVC ^ CALIBRATION_SEED) & 1
+    seed = gcrng_jump_back(TARGET_SEED, MIN_ADVC)
 
     res = False
-
     l = len(str(MAX_ADVC))
 
     for advc in range(MIN_ADVC, MAX_ADVC + 1, 2):
